@@ -1,0 +1,112 @@
+{
+  "reminders": [
+    {
+      "title": "Guest lecture",
+      "description": "No in-person lecture, Zoom link will be provided.",
+      "date": "2025-10-21",
+      "time": null,
+      "remind_before": "1 day",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Project focus day",
+      "description": "No class on this day, dedicated to project work.",
+      "date": "2025-10-23",
+      "time": null,
+      "remind_before": "1 day",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Project midpoint check-in",
+      "description": "Midpoint check-in for the project.",
+      "date": "2025-10-28",
+      "time": null,
+      "remind_before": "3 days",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "In-class exercise (individual): Testing due",
+      "description": "Individual in-class exercise on testing due.",
+      "date": "2025-11-10",
+      "time": "23:59",
+      "remind_before": "3 days",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Election Day (No Class)",
+      "description": "Class cancelled due to Election Day.",
+      "date": "2025-11-04",
+      "time": null,
+      "remind_before": "1 day",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Veterans' Day (No Class)",
+      "description": "Class cancelled due to Veterans' Day.",
+      "date": "2025-11-11",
+      "time": null,
+      "remind_before": "1 day",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "In-class exercise (individual): Specifications due",
+      "description": "Individual in-class exercise on specifications due.",
+      "date": "2025-11-25",
+      "time": "23:59",
+      "remind_before": "3 days",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Project focus day",
+      "description": "No class on this day, dedicated to project work.",
+      "date": "2025-11-25",
+      "time": null,
+      "remind_before": "1 day",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Thanksgiving (No Class)",
+      "description": "Class cancelled due to Thanksgiving holiday.",
+      "date": "2025-11-27",
+      "time": null,
+      "remind_before": "1 day",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Guest lecture",
+      "description": "No in-person lecture, Zoom link will be provided.",
+      "date": "2025-12-02",
+      "time": null,
+      "remind_before": "1 day",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Project fair",
+      "description": "Final project fair.",
+      "date": "2025-12-04",
+      "time": null,
+      "remind_before": "1 week",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    },
+    {
+      "title": "Project fair",
+      "description": "Final project fair.",
+      "date": "2025-12-09",
+      "time": null,
+      "remind_before": "1 week",
+      "captured_at": "2025-11-08T10:34:21.842119",
+      "screenshot_path": "screenshots/capture_20251108_103410.png"
+    }
+  ]
+}
