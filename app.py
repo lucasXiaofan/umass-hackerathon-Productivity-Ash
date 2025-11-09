@@ -16,6 +16,7 @@ from focus_helper import (
     send_focus_notification,
     capture_and_analyze_screenshot
 )
+from voiceengine import generate_speech_for_text, text_to_speech
 
 # Load environment variables
 load_dotenv()
@@ -80,10 +81,10 @@ def process_pdf_docling(pdf_file):
 
 
 
-def chat_with_context(message, history, pdf_content):
+def chat_with_context(message, history, pdf_content, auto_play_voice=False):
     """Handle chat with PDF context"""
     if not message.strip():
-        return history, history, pdf_content
+        return history, history, pdf_content, None
 
     # Get current date and time information
     now = datetime.now()
@@ -131,12 +132,20 @@ Please provide a helpful response."""
         bot_response = f"Error: {str(e)}"
 
     history.append((message, bot_response))
-    return history, history, pdf_content
+    
+    # Generate audio for the bot response
+    audio_file = None
+    try:
+        audio_file = generate_speech_for_text(bot_response, auto_play=auto_play_voice)
+    except Exception as e:
+        print(f"Error generating speech: {e}")
+    
+    return history, history, pdf_content, audio_file
 
-def handle_pdf_upload(pdf_file, chat_history, extraction_method):
+def handle_pdf_upload(pdf_file, chat_history, extraction_method, auto_play_voice=False):
     """Process uploaded PDF, save markdown, and post to chat"""
     if pdf_file is None:
-        return None, "No PDF uploaded", chat_history, chat_history
+        return None, "No PDF uploaded", chat_history, chat_history, None
 
     # Extract content from PDF based on selected method
     if extraction_method == "Docling (Fast, Local)":
@@ -158,6 +167,7 @@ def handle_pdf_upload(pdf_file, chat_history, extraction_method):
     markdown_path = markdown_folder / markdown_filename
 
     # Save markdown file
+    audio_file = None
     try:
         with open(markdown_path, 'w', encoding='utf-8') as f:
             f.write(f"# PDF Extraction: {pdf_filename}\n\n")
@@ -177,12 +187,20 @@ def handle_pdf_upload(pdf_file, chat_history, extraction_method):
         chat_history.append((f"📎 Uploaded: {pdf_filename}", chat_message))
 
         status_msg = f"✅ PDF processed and saved to {markdown_path}"
+        
+        # Generate voice for status message if auto-play is enabled
+        if auto_play_voice:
+            try:
+                status_text = f"PDF {pdf_filename} processed and saved successfully"
+                audio_file = generate_speech_for_text(status_text, auto_play=True)
+            except Exception as e:
+                print(f"Error generating speech for PDF status: {e}")
 
     except Exception as e:
         status_msg = f"❌ Error saving markdown: {str(e)}"
         chat_history.append((f"📎 Uploaded: {pdf_filename}", f"Error: {str(e)}"))
 
-    return extracted_content, status_msg, chat_history, chat_history
+    return extracted_content, status_msg, chat_history, chat_history, audio_file
 
 def rag_query(query):
     """
@@ -271,12 +289,13 @@ Return only the relevant extracted content, properly formatted."""
 
 
 def generate_voice_response(text):
-    """Generate voice response (placeholder for TTS integration)"""
-    # You can integrate with TTS services like:
-    # - Google Cloud TTS
-    # - ElevenLabs
-    # - OpenAI TTS
-    return None  # Return audio file path when implemented
+    """Generate voice response using voiceengine"""
+    try:
+        audio_file = generate_speech_for_text(text, auto_play=False)
+        return audio_file
+    except Exception as e:
+        print(f"Error generating voice response: {e}")
+        return None
 
 
 def list_knowledge_sources():
@@ -389,8 +408,9 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
         """
     )
     
-    # Hidden state to store PDF content
+    # Hidden state to store PDF content and voice settings
     pdf_content_state = gr.State("")
+    last_audio_file = gr.State(None)
     
     with gr.Row():
         # Left column: Chat section
@@ -479,39 +499,51 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     chat_state = gr.State([])
     
     # Event handlers
-    def send_message(message, history, pdf_content):
-        return chat_with_context(message, history, pdf_content)
+    def send_message(message, history, pdf_content, auto_play):
+        return chat_with_context(message, history, pdf_content, auto_play)
     
     send_btn.click(
         send_message,
-        inputs=[msg, chat_state, pdf_content_state],
-        outputs=[chatbot, chat_state, pdf_content_state]
+        inputs=[msg, chat_state, pdf_content_state, voice_toggle],
+        outputs=[chatbot, chat_state, pdf_content_state, last_audio_file]
     ).then(
         lambda: "",
         outputs=[msg]
+    ).then(
+        lambda audio_file: audio_file if audio_file else gr.update(),
+        inputs=[last_audio_file],
+        outputs=[audio_output]
     )
     
     msg.submit(
         send_message,
-        inputs=[msg, chat_state, pdf_content_state],
-        outputs=[chatbot, chat_state, pdf_content_state]
+        inputs=[msg, chat_state, pdf_content_state, voice_toggle],
+        outputs=[chatbot, chat_state, pdf_content_state, last_audio_file]
     ).then(
         lambda: "",
         outputs=[msg]
+    ).then(
+        lambda audio_file: audio_file if audio_file else gr.update(),
+        inputs=[last_audio_file],
+        outputs=[audio_output]
     )
     
     pdf_upload.change(
         handle_pdf_upload,
-        inputs=[pdf_upload, chat_state, extraction_method],
-        outputs=[pdf_content_state, pdf_status, chatbot, chat_state]
+        inputs=[pdf_upload, chat_state, extraction_method, voice_toggle],
+        outputs=[pdf_content_state, pdf_status, chatbot, chat_state, last_audio_file]
     ).then(
         list_knowledge_sources,
         outputs=[knowledge_sources_display]
+    ).then(
+        lambda audio_file: audio_file if audio_file else gr.update(),
+        inputs=[last_audio_file],
+        outputs=[audio_output]
     )
     
     clear_btn.click(
-        lambda: ([], [], ""),
-        outputs=[chatbot, chat_state, pdf_content_state]
+        lambda: ([], [], "", None),
+        outputs=[chatbot, chat_state, pdf_content_state, last_audio_file]
     ).then(
         lambda: "Chat cleared!",
         outputs=[pdf_status]
@@ -523,10 +555,28 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
         outputs=[anime_image]
     )
     
-    # TTS button handler (placeholder)
+    # TTS button handler - speak last response
+    def speak_last_response(history):
+        """Generate speech for the last bot response"""
+        if not history or len(history) == 0:
+            return None
+        
+        # Get the last bot response
+        last_message_pair = history[-1]
+        if len(last_message_pair) >= 2:
+            last_bot_response = last_message_pair[1]
+            try:
+                audio_file = generate_voice_response(last_bot_response)
+                return audio_file
+            except Exception as e:
+                print(f"Error generating speech: {e}")
+                return None
+        return None
+    
     tts_btn.click(
-        lambda: gr.Info("TTS feature coming soon! Integrate with your preferred TTS service."),
-        outputs=[]
+        speak_last_response,
+        inputs=[chat_state],
+        outputs=[audio_output]
     )
 
     # Refresh knowledge sources button
