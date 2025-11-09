@@ -2,7 +2,7 @@ import os
 from pync import Notifier
 
 # Get the absolute path to the avatar image
-avatar_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'avatars', 'happy_cat.png'))
+avatar_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'images', 'A_1.png'))
 
 # Send notification with icon and click action to open the image
 Notifier.notify(

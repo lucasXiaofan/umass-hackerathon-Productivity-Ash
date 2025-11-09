@@ -312,7 +312,7 @@ def send_focus_notification(task_description: str, distraction_type: str = None)
         print(f"📢 [Notification] Stay focused on: {task_description}")
         return
 
-    avatar_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'avatars', 'happy_cat.png'))
+    avatar_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'images', 'A_1.png'))
     audio_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'voice', 'stayfocus.mp3'))
 
     if distraction_type:

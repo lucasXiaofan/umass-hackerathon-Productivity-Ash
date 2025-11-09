@@ -385,7 +385,32 @@ monitor_thread = threading.Thread(target=background_focus_monitor, daemon=True)
 monitor_thread.start()
 
 
-# Create custom CSS
+# Helper function to convert image to base64 for CSS (defined early for use in component initialization)
+def image_to_base64(image_path):
+    """Convert image file to base64 data URL for use in CSS"""
+    if not image_path or not os.path.exists(image_path):
+        return None
+    try:
+        with open(image_path, 'rb') as f:
+            image_data = f.read()
+            base64_data = base64.b64encode(image_data).decode('utf-8')
+            # Determine MIME type from file extension
+            ext = Path(image_path).suffix.lower()
+            mime_types = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp',
+                '.gif': 'image/gif'
+            }
+            mime_type = mime_types.get(ext, 'image/jpeg')
+            return f"data:{mime_type};base64,{base64_data}"
+    except Exception as e:
+        print(f"Error converting image to base64: {e}")
+        return None
+
+
+# Create custom CSS with background image support
 custom_css = """
 .chat-container {
     border-radius: 10px;
@@ -394,7 +419,93 @@ custom_css = """
 .anime-container {
     border-radius: 10px;
     padding: 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: background-image 0.5s ease-in-out;
+    min-height: 600px;
+    position: relative;
+}
+.character-image-wrapper {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.character-image-wrapper img {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+}
+#character-image-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+#character-image-container > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+#character-image-container > div > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+/* Remove all Gradio default styling from image component */
+[data-testid="image"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+[data-testid="image"] > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+[data-testid="image"] img {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: block !important;
+    margin: 0 !important;
+}
+/* Remove backgrounds from all possible Gradio containers */
+.gradio-image, .gradio-image > div, .gradio-image > div > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+/* Target any divs inside the character container */
+#character-image-container * {
+    background: transparent !important;
+}
+#character-image-container *:not(#character-image-container) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* Ensure the image itself has no background */
+#character-image-container img,
+#character-image-container > * img,
+#character-image-container > * > * img {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 """
 
@@ -460,15 +571,99 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
                 refresh_sources_btn = gr.Button("🔄 Refresh Sources", size="sm")
         
         # Right column: Anime display section
-        with gr.Column(scale=2, elem_classes="anime-container"):
+        with gr.Column(scale=2, elem_classes="anime-container", elem_id="anime-container"):
+            # Use absolute path for initial image and background
+            base_dir = Path(__file__).parent
+            initial_image = str(base_dir / "images" / "A_1.png")
+            initial_bg = str(base_dir / "images" / "happy landscape.jpg")
+            
+            # Convert initial background to base64 for CSS
+            def get_initial_bg_css():
+                bg_data_url = image_to_base64(initial_bg)
+                if bg_data_url:
+                    bg_url = bg_data_url
+                else:
+                    # Fallback to relative path
+                    try:
+                        initial_bg_path = Path(initial_bg)
+                        initial_bg_abs = initial_bg_path.resolve()
+                        initial_bg_rel = str(initial_bg_abs.relative_to(base_dir.resolve())).replace('\\', '/')
+                        bg_url = f"/{initial_bg_rel}"
+                    except:
+                        bg_url = "/images/happy landscape.jpg"
+                
+                return f"""
+                <style>
+                #character-image-container {{
+                    background-image: url('{bg_url}');
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    transition: background-image 0.5s ease-in-out;
+                    border-radius: 10px;
+                    padding: 20px;
+                    min-height: 400px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }}
+                #character-image-container img {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    display: block !important;
+                }}
+                #character-image-container > div {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }}
+                #character-image-container > div > div {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }}
+                /* Remove all backgrounds from nested elements */
+                #character-image-container * {{
+                    background: transparent !important;
+                }}
+                #character-image-container *:not(#character-image-container) {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }}
+                /* Ensure image has no background */
+                #character-image-container img,
+                #character-image-container > * img,
+                #character-image-container > * > * img {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }}
+                </style>
+                """
+            
+            # HTML component to hold dynamic CSS for background
+            background_style = gr.HTML(
+                value=get_initial_bg_css(),
+                visible=False
+            )
+            
             gr.Markdown("### 🎭 AI Companion")
             
-            anime_image = gr.Image(
-                label="Character Display",
-                height=400,
-                value="avatars/happy_cat.png",
-                show_label=False
-            )
+            # Character image container with background
+            with gr.Column(elem_id="character-image-container", elem_classes="character-image-wrapper"):
+                anime_image = gr.Image(
+                    label="Character Display",
+                    height=400,
+                    value=initial_image,
+                    show_label=False,
+                    type="filepath",
+                    container=False
+                )
+            
+            # Hidden component to store background image path
+            background_state = gr.State(value=initial_bg)
             
             gr.Markdown("#### 🔊 Voice Features")
             
@@ -484,7 +679,6 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             
             voice_input = gr.Audio(
                 label="🎤 Voice Input (Coming Soon)",
-                sources=["microphone"],
                 visible=False  # Hide until implemented
             )
             
@@ -501,6 +695,89 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     # Event handlers
     def send_message(message, history, pdf_content, auto_play):
         return chat_with_context(message, history, pdf_content, auto_play)
+    
+    # Helper function to convert absolute path to relative path for Gradio
+    def get_relative_bg_path(absolute_path):
+        """Convert absolute path to relative path that Gradio can serve"""
+        if not absolute_path:
+            return None
+        base_dir = Path(__file__).parent
+        try:
+            abs_path = Path(absolute_path).resolve()
+            rel_path = abs_path.relative_to(base_dir)
+            return str(rel_path).replace('\\', '/')
+        except:
+            # If relative path calculation fails, try to extract from absolute
+            if 'images' in absolute_path:
+                parts = absolute_path.split('images')
+                if len(parts) > 1:
+                    return f"images{parts[1]}"
+            return None
+    
+    def update_background_wrapper(chat_history, state, pdf_content, char_image, bg_image):
+        # Convert image to base64 data URL for reliable CSS background
+        bg_data_url = image_to_base64(bg_image)
+        
+        if not bg_data_url:
+            # Fallback to relative path if base64 conversion fails
+            rel_bg = get_relative_bg_path(bg_image)
+            bg_url = f"/{rel_bg}" if rel_bg else bg_image
+        else:
+            bg_url = bg_data_url
+        
+        # Create CSS style tag to update background (pure Python, no JavaScript)
+        css_html = f"""
+        <style>
+        #character-image-container {{
+            background-image: url('{bg_url}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease-in-out;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        #character-image-container img {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            display: block !important;
+        }}
+        #character-image-container > div {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+        #character-image-container > div > div {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+        /* Remove all backgrounds from nested elements */
+        #character-image-container * {{
+            background: transparent !important;
+        }}
+        #character-image-container *:not(#character-image-container) {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+        /* Ensure image has no background */
+        #character-image-container img,
+        #character-image-container > * img,
+        #character-image-container > * > * img {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+        </style>
+        """
+        
+        return chat_history, state, pdf_content, char_image, bg_image, css_html
     
     send_btn.click(
         send_message,
@@ -586,11 +863,34 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     )
 
 if __name__ == "__main__":
+    import socket
+    
+    def find_free_port(start_port=7860, max_attempts=10):
+        """Find an available port starting from start_port"""
+        for i in range(max_attempts):
+            port = start_port + i
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(('', port))
+                    return port
+            except OSError:
+                continue
+        return None
+    
     print("🚀 Starting Gradio app...")
     print("📝 Make sure to set your GEMINI_API_KEY in .env file or environment variables")
+    
+    # Try to find an available port
+    port = find_free_port(7860)
+    if port is None:
+        print("⚠️ Could not find an available port, using default 7860")
+        port = 7860
+    else:
+        print(f"📡 Using port {port}")
+    
     demo.launch(
         share=False,
         server_name="0.0.0.0",
-        server_port=7860,
+        server_port=port,
         show_error=True
     )
