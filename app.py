@@ -80,10 +80,123 @@ def process_pdf_docling(pdf_file):
 
 
 
+def detect_emotion_state(text):
+    """
+    Detect if the text expresses surprised/worried emotions.
+    Returns: "surprised_worried" or "neutral"
+    """
+    if not text or not text.strip():
+        return "neutral"
+    
+    # Debug: show what we're analyzing (first 100 chars)
+    print(f"🔍 Analyzing emotion in text: {text[:100]}...")
+    
+    text_lower = text.lower()
+    
+    # Check for surprised/worried emotions (A_3)
+    # A_3 = Surprise at unexpected events OR Worry about future outcomes
+    surprised_worried_keywords = [
+        # Pure surprise words
+        "surprised", "surprise", "surprising", "surprised that", "surprised to",
+        "wow", "whoa", "oh my", "oh gosh",
+        "unexpected", "unexpectedly", "didn't expect", "wasn't expecting",
+        "didn't see that coming", "caught off guard", "taken aback",
+        "startled", "stunned", "amazed",
+        
+        # Genuine worry about outcomes
+        "worried", "worry", "worrying", "worries", "worried about",
+        "anxious", "anxiety", "nervous", "nervousness",
+        "uncertain", "uncertainty", "unsure", "not sure", "not certain",
+        "hesitant", "hesitation", "apprehensive", "uneasy",
+        
+        # Uncertainty phrases
+        "hmm", "hmmm", "uh oh", "huh", "huh?", "really?",
+        "that's unexpected", "that's surprising",
+        "i'm worried", "i'm surprised", "i'm not sure",
+        "wondering if", "hoping that", "uncertain about",
+        "not entirely sure", "a bit worried", "a little worried",
+        
+        # Time-sensitive worry
+        "deadline", "due soon", "running out of time", "time is tight",
+        "might not make it", "cutting it close", "pressed for time",
+        "running short on time", "time crunch"
+    ]
+    
+    surprised_worried_patterns = [
+        "i'm surprised", "i'm worried", "i'm not sure",
+        "that's surprising", "that's unexpected", 
+        "oh no", "uh oh", "hmm", "didn't see that coming",
+        "i didn't expect", "wasn't expecting", "caught me off guard",
+        "that worries me", "makes me worried",
+        "a bit worried", "a little worried", "somewhat surprised",
+        "quite surprising", "really surprising",
+        "not entirely sure", "not completely certain", "a bit uncertain",
+        "wondering if", "hoping that", "uncertain about"
+    ]
+    
+    # Check keywords (instant detection)
+    for keyword in surprised_worried_keywords:
+        if keyword in text_lower:
+            print(f"🔍 Emotion detection (keyword '{keyword}'): SURPRISED/WORRIED detected")
+            return "surprised_worried"
+    
+    # Check patterns (instant detection)
+    for pattern in surprised_worried_patterns:
+        if pattern in text_lower:
+            print(f"🔍 Emotion detection (pattern '{pattern}'): SURPRISED/WORRIED detected")
+            return "surprised_worried"
+    
+    # Use Gemini for nuanced detection if keywords didn't match
+    try:
+        prompt_surprised = f"""Does this text express SURPRISE or WORRY about outcomes?
+
+SURPRISE indicators:
+- "I'm surprised that..." (neutral observation)
+- "That's unexpected" (not negative)
+- "Wow", "Oh my" (exclamation)
+- "Didn't expect that" (neutral)
+
+WORRY indicators:
+- "I'm worried about..." (concern for outcome)
+- "That worries me" (concern, not judgment)
+- "Not sure if..." (uncertainty)
+- "Deadline approaching" (time pressure concern)
+
+Text: "{text[:600]}"
+
+Does this express SURPRISE or WORRY? Answer ONLY "YES" or "NO"."""
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=prompt_surprised,
+            config={"temperature": 0.0, "max_output_tokens": 10}
+        )
+        result = response.text.strip().upper()
+        # More flexible YES detection
+        has_surprised_worried = (
+            result.startswith("YES") or 
+            (result.split()[0] == "YES" if result.split() else False) or
+            "YES" in result
+        )
+        
+        if has_surprised_worried:
+            print(f"🔍 Emotion detection (Gemini): SURPRISED/WORRIED (response: '{result}')")
+            return "surprised_worried"
+        
+        return "neutral"
+        
+    except Exception as e:
+        print(f"⚠️ Error in Gemini emotion detection: {str(e)}")
+        return "neutral"
+
+
 def chat_with_context(message, history, pdf_content):
     """Handle chat with PDF context"""
     if not message.strip():
-        return history, history, pdf_content
+        base_dir = Path(__file__).parent
+        default_image = str(base_dir / "images" / "A_1.png")
+        default_bg = str(base_dir / "images" / "happy landscape.jpg")
+        return history, history, pdf_content, default_image, default_bg
 
     # Get current date and time information
     now = datetime.now()
@@ -131,7 +244,51 @@ Please provide a helpful response."""
         bot_response = f"Error: {str(e)}"
 
     history.append((message, bot_response))
-    return history, history, pdf_content
+    
+    # Detect emotion state IMMEDIATELY (synchronous, no delay)
+    emotion_state = detect_emotion_state(bot_response)
+    
+    # Use absolute paths for images to ensure they load instantly
+    base_dir = Path(__file__).parent
+    a1_path = base_dir / "images" / "A_1.png"
+    a3_path = base_dir / "images" / "A_3.png"
+    
+    # Verify files exist and get absolute paths
+    a1_abs = str(a1_path.resolve()) if a1_path.exists() else None
+    a3_abs = str(a3_path.resolve()) if a3_path.exists() else None
+    
+    if not a1_abs:
+        print(f"❌ ERROR: A_1.png not found at {a1_path}")
+    if not a3_abs:
+        print(f"❌ ERROR: A_3.png not found at {a3_path}")
+    
+    # Get background image paths (check both .jpg and .webp extensions)
+    happy_bg_path = base_dir / "images" / "happy landscape.jpg"
+    sad_bg_path_jpg = base_dir / "images" / "sad landscape.jpg"
+    sad_bg_path_webp = base_dir / "images" / "sad landscape.webp"
+    
+    # Use .webp if it exists, otherwise try .jpg
+    sad_bg_path = sad_bg_path_webp if sad_bg_path_webp.exists() else sad_bg_path_jpg
+    
+    happy_bg_abs = str(happy_bg_path.resolve()) if happy_bg_path.exists() else None
+    sad_bg_abs = str(sad_bg_path.resolve()) if sad_bg_path.exists() else None
+    
+    # Select character image and background based on emotion state
+    if emotion_state == "surprised_worried" and a3_abs:
+        image_path = a3_abs
+        background_path = sad_bg_abs if sad_bg_abs else None
+        print(f"🖼️ ✅ Switching to A_3.png with sad landscape (surprised/worried emotion)")
+    elif a1_abs:
+        image_path = a1_abs
+        background_path = happy_bg_abs if happy_bg_abs else None
+        print(f"🖼️ Using A_1.png with happy landscape (neutral/positive)")
+    else:
+        # Fallback to relative path if absolute doesn't work
+        image_path = "images/A_1.png"
+        background_path = "images/happy landscape.jpg"
+        print(f"⚠️ Using fallback image paths")
+    
+    return history, history, pdf_content, image_path, background_path
 
 def handle_pdf_upload(pdf_file, chat_history, extraction_method):
     """Process uploaded PDF, save markdown, and post to chat"""
@@ -366,7 +523,32 @@ monitor_thread = threading.Thread(target=background_focus_monitor, daemon=True)
 monitor_thread.start()
 
 
-# Create custom CSS
+# Helper function to convert image to base64 for CSS (defined early for use in component initialization)
+def image_to_base64(image_path):
+    """Convert image file to base64 data URL for use in CSS"""
+    if not image_path or not os.path.exists(image_path):
+        return None
+    try:
+        with open(image_path, 'rb') as f:
+            image_data = f.read()
+            base64_data = base64.b64encode(image_data).decode('utf-8')
+            # Determine MIME type from file extension
+            ext = Path(image_path).suffix.lower()
+            mime_types = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp',
+                '.gif': 'image/gif'
+            }
+            mime_type = mime_types.get(ext, 'image/jpeg')
+            return f"data:{mime_type};base64,{base64_data}"
+    except Exception as e:
+        print(f"Error converting image to base64: {e}")
+        return None
+
+
+# Create custom CSS with background image support
 custom_css = """
 .chat-container {
     border-radius: 10px;
@@ -375,7 +557,93 @@ custom_css = """
 .anime-container {
     border-radius: 10px;
     padding: 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: background-image 0.5s ease-in-out;
+    min-height: 600px;
+    position: relative;
+}
+.character-image-wrapper {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.character-image-wrapper img {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+}
+#character-image-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+#character-image-container > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+#character-image-container > div > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+/* Remove all Gradio default styling from image component */
+[data-testid="image"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+[data-testid="image"] > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+[data-testid="image"] img {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: block !important;
+    margin: 0 !important;
+}
+/* Remove backgrounds from all possible Gradio containers */
+.gradio-image, .gradio-image > div, .gradio-image > div > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+/* Target any divs inside the character container */
+#character-image-container * {
+    background: transparent !important;
+}
+#character-image-container *:not(#character-image-container) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* Ensure the image itself has no background */
+#character-image-container img,
+#character-image-container > * img,
+#character-image-container > * > * img {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 """
 
@@ -440,15 +708,99 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
                 refresh_sources_btn = gr.Button("🔄 Refresh Sources", size="sm")
         
         # Right column: Anime display section
-        with gr.Column(scale=2, elem_classes="anime-container"):
+        with gr.Column(scale=2, elem_classes="anime-container", elem_id="anime-container"):
+            # Use absolute path for initial image and background
+            base_dir = Path(__file__).parent
+            initial_image = str(base_dir / "images" / "A_1.png")
+            initial_bg = str(base_dir / "images" / "happy landscape.jpg")
+            
+            # Convert initial background to base64 for CSS
+            def get_initial_bg_css():
+                bg_data_url = image_to_base64(initial_bg)
+                if bg_data_url:
+                    bg_url = bg_data_url
+                else:
+                    # Fallback to relative path
+                    try:
+                        initial_bg_path = Path(initial_bg)
+                        initial_bg_abs = initial_bg_path.resolve()
+                        initial_bg_rel = str(initial_bg_abs.relative_to(base_dir.resolve())).replace('\\', '/')
+                        bg_url = f"/{initial_bg_rel}"
+                    except:
+                        bg_url = "/images/happy landscape.jpg"
+                
+                return f"""
+                <style>
+                #character-image-container {{
+                    background-image: url('{bg_url}');
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    transition: background-image 0.5s ease-in-out;
+                    border-radius: 10px;
+                    padding: 20px;
+                    min-height: 400px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }}
+                #character-image-container img {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    display: block !important;
+                }}
+                #character-image-container > div {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }}
+                #character-image-container > div > div {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }}
+                /* Remove all backgrounds from nested elements */
+                #character-image-container * {{
+                    background: transparent !important;
+                }}
+                #character-image-container *:not(#character-image-container) {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }}
+                /* Ensure image has no background */
+                #character-image-container img,
+                #character-image-container > * img,
+                #character-image-container > * > * img {{
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }}
+                </style>
+                """
+            
+            # HTML component to hold dynamic CSS for background
+            background_style = gr.HTML(
+                value=get_initial_bg_css(),
+                visible=False
+            )
+            
             gr.Markdown("### 🎭 AI Companion")
             
-            anime_image = gr.Image(
-                label="Character Display",
-                height=400,
-                value="avatars/happy_cat.png",
-                show_label=False
-            )
+            # Character image container with background
+            with gr.Column(elem_id="character-image-container", elem_classes="character-image-wrapper"):
+                anime_image = gr.Image(
+                    label="Character Display",
+                    height=400,
+                    value=initial_image,
+                    show_label=False,
+                    type="filepath",
+                    container=False
+                )
+            
+            # Hidden component to store background image path
+            background_state = gr.State(value=initial_bg)
             
             gr.Markdown("#### 🔊 Voice Features")
             
@@ -464,7 +816,6 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             
             voice_input = gr.Audio(
                 label="🎤 Voice Input (Coming Soon)",
-                sources=["microphone"],
                 visible=False  # Hide until implemented
             )
             
@@ -482,10 +833,97 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     def send_message(message, history, pdf_content):
         return chat_with_context(message, history, pdf_content)
     
+    # Helper function to convert absolute path to relative path for Gradio
+    def get_relative_bg_path(absolute_path):
+        """Convert absolute path to relative path that Gradio can serve"""
+        if not absolute_path:
+            return None
+        base_dir = Path(__file__).parent
+        try:
+            abs_path = Path(absolute_path).resolve()
+            rel_path = abs_path.relative_to(base_dir)
+            return str(rel_path).replace('\\', '/')
+        except:
+            # If relative path calculation fails, try to extract from absolute
+            if 'images' in absolute_path:
+                parts = absolute_path.split('images')
+                if len(parts) > 1:
+                    return f"images{parts[1]}"
+            return None
+    
+    def update_background_wrapper(chat_history, state, pdf_content, char_image, bg_image):
+        # Convert image to base64 data URL for reliable CSS background
+        bg_data_url = image_to_base64(bg_image)
+        
+        if not bg_data_url:
+            # Fallback to relative path if base64 conversion fails
+            rel_bg = get_relative_bg_path(bg_image)
+            bg_url = f"/{rel_bg}" if rel_bg else bg_image
+        else:
+            bg_url = bg_data_url
+        
+        # Create CSS style tag to update background (pure Python, no JavaScript)
+        css_html = f"""
+        <style>
+        #character-image-container {{
+            background-image: url('{bg_url}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease-in-out;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        #character-image-container img {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            display: block !important;
+        }}
+        #character-image-container > div {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+        #character-image-container > div > div {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+        /* Remove all backgrounds from nested elements */
+        #character-image-container * {{
+            background: transparent !important;
+        }}
+        #character-image-container *:not(#character-image-container) {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+        /* Ensure image has no background */
+        #character-image-container img,
+        #character-image-container > * img,
+        #character-image-container > * > * img {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }}
+        </style>
+        """
+        
+        return chat_history, state, pdf_content, char_image, bg_image, css_html
+    
     send_btn.click(
         send_message,
         inputs=[msg, chat_state, pdf_content_state],
-        outputs=[chatbot, chat_state, pdf_content_state]
+        outputs=[chatbot, chat_state, pdf_content_state, anime_image, background_state]
+    ).then(
+        update_background_wrapper,
+        inputs=[chatbot, chat_state, pdf_content_state, anime_image, background_state],
+        outputs=[chatbot, chat_state, pdf_content_state, anime_image, background_state, background_style]
     ).then(
         lambda: "",
         outputs=[msg]
@@ -494,7 +932,11 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     msg.submit(
         send_message,
         inputs=[msg, chat_state, pdf_content_state],
-        outputs=[chatbot, chat_state, pdf_content_state]
+        outputs=[chatbot, chat_state, pdf_content_state, anime_image, background_state]
+    ).then(
+        update_background_wrapper,
+        inputs=[chatbot, chat_state, pdf_content_state, anime_image, background_state],
+        outputs=[chatbot, chat_state, pdf_content_state, anime_image, background_state, background_style]
     ).then(
         lambda: "",
         outputs=[msg]
@@ -536,11 +978,34 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     )
 
 if __name__ == "__main__":
+    import socket
+    
+    def find_free_port(start_port=7860, max_attempts=10):
+        """Find an available port starting from start_port"""
+        for i in range(max_attempts):
+            port = start_port + i
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(('', port))
+                    return port
+            except OSError:
+                continue
+        return None
+    
     print("🚀 Starting Gradio app...")
     print("📝 Make sure to set your GEMINI_API_KEY in .env file or environment variables")
+    
+    # Try to find an available port
+    port = find_free_port(7860)
+    if port is None:
+        print("⚠️ Could not find an available port, using default 7860")
+        port = 7860
+    else:
+        print(f"📡 Using port {port}")
+    
     demo.launch(
         share=False,
         server_name="0.0.0.0",
-        server_port=7860,
+        server_port=port,
         show_error=True
     )
