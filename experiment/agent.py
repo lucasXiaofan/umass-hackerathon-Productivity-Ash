@@ -186,19 +186,7 @@ When the task is complete, provide a final text response (don't call any tools).
 
 # Example usage
 if __name__ == "__main__":
-    agent = ReActAgent(max_iterations=15)
     
-    # Example 1: Read and generate test cases
-    result = agent.run(
-        """
-        Go to deepseek_cot_solutions folder, read solution_4.py, and generate test cases 
-        that will cover all the lines and branches of the code.
-        Also read test_all_problems.py to understand the testing format.
-        Make sure the updated test file uses pytest, and store the test in a python script.
-        Verify the script is successfully generated before ending the session.
-        """
-    )
-    print(f"\n{'='*60}\nFinal Result:\n{result}\n{'='*60}")
     
     # Example 2: Simple file operation
     # result = agent.run(

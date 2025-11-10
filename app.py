@@ -81,7 +81,7 @@ def process_pdf_docling(pdf_file):
 
 
 
-def chat_with_context(message, history, pdf_content, auto_play_voice=False):
+def chat_with_context(message, history, pdf_content, auto_play_voice=True):
     """Handle chat with PDF context"""
     if not message.strip():
         return history, history, pdf_content, None
@@ -108,7 +108,7 @@ def chat_with_context(message, history, pdf_content, auto_play_voice=False):
 You are Ash, a friendly and helpful personal assistant for students.
 Your job is to help students manage their time, deadlines, and reminders in a casual, supportive way.
 Be conversational, encouraging, and use phrases like "we got this!" and "I'm here to help".
-Keep responses concise (3-5 sentences max) and actionable.
+Keep responses concise (2-3 sentences max) and actionable.
 {datetime_context}
 
 if time is during 11pm - 4am remind user to take a sleep
@@ -124,7 +124,7 @@ Please provide a helpful response."""
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
+            model="gemini-2.5-flash",
             contents=prompt
         )
         bot_response = response.text
@@ -675,7 +675,7 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             
             with gr.Row():
                 tts_btn = gr.Button("🔊 Speak Last Response", scale=2)
-                voice_toggle = gr.Checkbox(label="Auto-play voice", value=False, scale=1)
+                voice_toggle = gr.Checkbox(label="Auto-play voice", value=True, scale=1)
             
             voice_input = gr.Audio(
                 label="🎤 Voice Input (Coming Soon)",
