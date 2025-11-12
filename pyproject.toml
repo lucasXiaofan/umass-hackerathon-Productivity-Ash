@@ -10,6 +10,7 @@ dependencies = [
     "elevenlabs>=2.22.0",
     "google-genai>=1.49.0",
     "gradio>=3.36.1",
+    "mlx-audio>=0.2.6",
     "mss>=10.1.0",
     "openai>=2.7.1",
     "osxphotos>=0.74.0",
