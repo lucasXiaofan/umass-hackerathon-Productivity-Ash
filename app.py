@@ -18,6 +18,22 @@ from focus_helper import (
 )
 from voiceengine import generate_speech_for_text, text_to_speech
 
+
+import os
+import json
+from openai import OpenAI
+from dotenv import load_dotenv
+import subprocess
+
+# Load environment variables and configure client
+load_dotenv()
+model_name = "deepseek/deepseek-chat-v3"
+# model_name = "minimax/minimax-m2:free"  # Alternative free model
+open_client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+)
+
 # Load environment variables
 load_dotenv()
 
@@ -121,13 +137,22 @@ relevant context: {relevant_context}
 User question: {message}
 
 Please provide a helpful response."""
-
+    messages = [
+            {"role": "user", "content": prompt}
+        ]
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-        bot_response = response.text
+        response = open_client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+       
+            )
+            
+        bot_response = response.choices[0].message.content
+        # response = open_client.models.generate_content(
+        #     model=model_name,
+        #     contents=prompt
+        # )
+
     except Exception as e:
         bot_response = f"Error: {str(e)}"
 
@@ -136,7 +161,8 @@ Please provide a helpful response."""
     # Generate audio for the bot response
     audio_file = None
     try:
-        audio_file = generate_speech_for_text(bot_response, auto_play=auto_play_voice)
+        pass
+        # audio_file = generate_speech_for_text(bot_response, auto_play=auto_play_voice)
     except Exception as e:
         print(f"Error generating speech: {e}")
     

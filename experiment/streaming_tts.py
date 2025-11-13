@@ -46,7 +46,7 @@ for chunk in stream:
 
             text_buffer = ""  # Clear buffer after speaking
 
-# Handle any remaining text
+# Handle any remaining text``
 if text_buffer.strip():
     print(f"Speaking: {text_buffer.strip()}")
     for _, _, audio in pipeline(text_buffer.strip(), voice=voice, speed=1):
