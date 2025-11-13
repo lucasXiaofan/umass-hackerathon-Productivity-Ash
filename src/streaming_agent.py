@@ -10,160 +10,33 @@ from io import BytesIO
 from datetime import datetime
 import threading
 from pynput import keyboard
-
+from tool import *
 load_dotenv()
 
 # OpenAI/OpenRouter setup
-model_name = "x-ai/grok-4-fast"
+# model_name = "x-ai/grok-4-fast"
+model_name = "openrouter/polaris-alpha"
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.getenv("OPENROUTER_API_KEY"),
 )
 
-# Paths
-INSTRUCTION_FILE = "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/user_instruction.md"
-MEMORY_DIR = "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory"
-SCREENSHOT_DIR = "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/screenshots"
 
-# Ensure directories exist
-os.makedirs(MEMORY_DIR, exist_ok=True)
-os.makedirs(SCREENSHOT_DIR, exist_ok=True)
-
-# Tool definitions
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "bash_command",
-            "description": "Execute bash commands to modify files, create new files, or perform system operations",
-            "parameters": {
-                "type": "object",
-                "properties": {"command": {"type": "string"}},
-                "required": ["command"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "read_instructions",
-            "description": "Read past user instructions from the instruction file",
-            "parameters": {"type": "object", "properties": {}}
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "update_instructions",
-            "description": "Update or append to the user instruction file",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "content": {"type": "string", "description": "Content to append to instructions"}
-                },
-                "required": ["content"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "ask_user_question",
-            "description": "Ask the user a question when instructions are unclear",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "question": {"type": "string", "description": "Question to ask the user"}
-                },
-                "required": ["question"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "create_memory_file",
-            "description": "Create a new file in memory folder to track specific information",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "filename": {"type": "string", "description": "Name of the file to create"},
-                    "content": {"type": "string", "description": "Content to write to the file"}
-                },
-                "required": ["filename", "content"]
-            }
-        }
-    }
-]
-
-def take_screenshot():
-    """Capture full screenshot"""
-    with mss.mss() as sct:
-        monitor = sct.monitors[1]
-        screenshot = sct.grab(monitor)
-        img = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
-        return img
-
-def save_screenshot(img):
-    """Save screenshot to file"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filepath = f"{SCREENSHOT_DIR}/capture_{timestamp}.png"
-    img.save(filepath)
-    print(f"\n📸 Screenshot saved: {filepath}")
-    return filepath
-
-def image_to_base64(img):
-    """Convert PIL Image to base64 string"""
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    img_bytes = buffered.getvalue()
-    return base64.b64encode(img_bytes).decode('utf-8')
-
-def execute_tool(name, args):
-    """Execute tool calls"""
-    if name == "bash_command":
-        result = subprocess.run(args["command"], shell=True, capture_output=True, text=True)
-        return result.stdout if result.returncode == 0 else f"Error: {result.stderr}"
-
-    elif name == "read_instructions":
-        try:
-            with open(INSTRUCTION_FILE, 'r') as f:
-                content = f.read()
-            return content if content.strip() else "No instructions found. File is empty."
-        except Exception as e:
-            return f"Error reading instructions: {e}"
-
-    elif name == "update_instructions":
-        try:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            with open(INSTRUCTION_FILE, 'a') as f:
-                f.write(f"\n\n## [{timestamp}]\n{args['content']}\n")
-            return "Instructions updated successfully"
-        except Exception as e:
-            return f"Error updating instructions: {e}"
-
-    elif name == "ask_user_question":
-        print(f"\n❓ Agent Question: {args['question']}")
-        user_response = input("Your answer: ")
-        return user_response
-
-    elif name == "create_memory_file":
-        try:
-            filepath = os.path.join(MEMORY_DIR, args['filename'])
-            with open(filepath, 'w') as f:
-                f.write(args['content'])
-            return f"Memory file created at {filepath}"
-        except Exception as e:
-            return f"Error creating memory file: {e}"
-
-    return "Unknown tool"
 
 def run_agent_with_image(task, image_base64=None, max_iter=15):
     """Run agent with optional image input"""
     # Build initial message
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")  # e.g., 2024-03-15
+    current_time = now.strftime("%H:%M:%S")  # e.g., 14:30:45
+    current_weekday = now.strftime("%A")     # e.g., Monday
+
+    # Format datetime context
+    datetime_context = f"Current Date: {current_date} ({current_weekday})\nCurrent Time: {current_time}"
+
     user_message = {
         "role": "user",
-        "content": [{"type": "text", "text": task}]
+        "content": [{"type": "text", "text": f"current time: {datetime_context}, task: {task}"}]
     }
 
     if image_base64:
@@ -173,7 +46,15 @@ def run_agent_with_image(task, image_base64=None, max_iter=15):
         })
 
     messages = [
-        {"role": "system", "content": "You are a helpful assistant with access to bash commands, memory management, and user instruction tracking. Always check past instructions before taking action. If unclear, ask questions to the user."},
+        {"role": "system", "content": f"""
+            You are a helpful assistant with access to bash commands, 
+         memory management, and user instruction tracking. 
+         If unclear, ask questions to the user.
+         make your message to user concise (3-5) sentences, trying to be cheerful and helpful 
+        
+         current instruction from past: 
+         {read_instructions()}
+         """},
         user_message
     ]
 
@@ -278,7 +159,7 @@ def main():
 
     # Start keyboard listener in background
     hotkey_listener = keyboard.GlobalHotKeys({
-        '<cmd>+<shift>+s': on_screenshot_hotkey
+        '<cmd>+<shift>+l': on_screenshot_hotkey
     })
     hotkey_listener.start()
 
