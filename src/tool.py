@@ -11,15 +11,33 @@ from pynput import keyboard
 import sounddevice as sd
 from mlx_audio.tts.models.kokoro import KokoroPipeline
 from mlx_audio.tts.utils import load_model
+import threading
+import queue
+import warnings
+import logging
+import numpy as np
+import json
+
+# Suppress phonemizer and other TTS warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='phonemizer')
+warnings.filterwarnings('ignore', module='mlx_audio')
+logging.getLogger('phonemizer').setLevel(logging.ERROR)
+
 load_dotenv()
 # Paths
 INSTRUCTION_FILE = "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/user_instruction.md"
 MEMORY_DIR = "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory"
 SCREENSHOT_DIR = "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/screenshots"
+CONVERSATION_HISTORY_FILE = "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/conversation_history.json"
 
 # Ensure directories exist
 os.makedirs(MEMORY_DIR, exist_ok=True)
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+
+# Configure sounddevice for better audio performance
+sd.default.latency = 'low'
+sd.default.blocksize = 2048
+sd.default.prime_output_buffers_using_stream_callback = True
 
 # Initialize TTS model
 print("Loading TTS model...")
@@ -27,7 +45,127 @@ model_id = 'prince-canuma/Kokoro-82M'
 tts_model = load_model(model_id)
 tts_pipeline = KokoroPipeline(lang_code='a', model=tts_model, repo_id=model_id)
 tts_voice = "af_heart"
+# tts_voice = "bf_emma"
 print("TTS model loaded successfully")
+
+# TTS Queue System
+tts_queue = queue.Queue()
+tts_stop_event = threading.Event()
+
+def tts_worker():
+    """Dedicated worker thread for TTS playback"""
+    print("🔊 TTS worker thread started")
+    import warnings
+    import sys
+
+    # Suppress phonemizer warnings for cleaner output
+    warnings.filterwarnings('ignore', category=UserWarning, module='phonemizer')
+
+    # Set thread priority on macOS
+    try:
+        import ctypes
+        if sys.platform == 'darwin':
+            # Set thread to higher priority on macOS
+            libc = ctypes.CDLL('/usr/lib/libc.dylib')
+            libc.pthread_setname_np(b'TTS_Audio_Worker')
+    except:
+        pass  # Ignore if priority setting fails
+
+    while not tts_stop_event.is_set():
+        try:
+            # Get text from queue with timeout
+            item = tts_queue.get(timeout=0.05)
+            if item is None:  # Poison pill to stop
+                break
+
+            text, voice, speed = item
+
+            # Skip empty or very short text
+            if not text or len(text) < 5:
+                tts_queue.task_done()
+                continue
+
+            # Generate and play audio
+            try:
+                audio_chunks = []
+
+                # Collect all audio chunks first
+                for _, _, audio in tts_pipeline(text, voice=voice, speed=speed):
+                    if tts_stop_event.is_set():
+                        break
+                    audio_chunks.append(audio[0])
+
+                # Concatenate all chunks into one buffer for smoother playback
+                if audio_chunks and not tts_stop_event.is_set():
+                    full_audio = np.concatenate(audio_chunks, axis=0)
+
+                    # Play the complete audio buffer in blocking mode
+                    # This prevents glitches from chunked playback
+                    sd.play(
+                        full_audio,
+                        samplerate=24000,
+                        blocksize=2048,
+                        blocking=True
+                    )
+
+                    # Small delay to ensure audio device is ready for next
+                    sd.sleep(5)
+
+            except Exception as tts_error:
+                # Log TTS generation errors but continue
+                print(f"\n⚠️ TTS generation error: {tts_error}")
+
+            tts_queue.task_done()
+        except queue.Empty:
+            continue
+        except Exception as e:
+            print(f"\n⚠️ TTS worker error: {e}")
+            try:
+                tts_queue.task_done()
+            except:
+                pass
+
+    print("🔊 TTS worker thread stopped")
+
+def sanitize_text_for_tts(text):
+    """Clean text for TTS to avoid phonemizer errors"""
+    import re
+
+    # Remove URLs
+    text = re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
+
+    # Remove markdown code blocks and inline code
+    text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+    text = re.sub(r'`[^`]+`', '', text)
+
+    # Remove emojis and special unicode characters
+    text = re.sub(r'[^\w\s.,!?;:\'-]', '', text)
+
+    # Remove multiple spaces
+    text = re.sub(r'\s+', ' ', text)
+
+    # Remove very short words (likely artifacts)
+    text = ' '.join(word for word in text.split() if len(word) > 1 or word in ['I', 'a', 'A'])
+
+    return text.strip()
+
+def queue_tts(text, voice=None, speed=1.1):
+    """Add text to TTS queue for playback"""
+    cleaned_text = sanitize_text_for_tts(text)
+
+    # Only queue if text is substantial enough (at least 10 characters)
+    if cleaned_text and len(cleaned_text) >= 10:
+        v = voice if voice else tts_voice
+        tts_queue.put((cleaned_text, v, speed))
+
+def stop_tts_worker():
+    """Stop the TTS worker thread"""
+    tts_stop_event.set()
+    tts_queue.put(None)  # Poison pill
+
+# Start TTS worker thread
+tts_thread = threading.Thread(target=tts_worker, daemon=True)
+tts_thread.start()
 
 # Tool definitions
 tools = [
@@ -57,20 +195,21 @@ tools = [
             }
         }
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "ask_user_question",
-            "description": "Ask the user a question when instructions are unclear",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "question": {"type": "string", "description": "Question to ask the user"}
-                },
-                "required": ["question"]
-            }
-        }
-    },
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "ask_user_question",
+    #         "description": "Ask the user a question when instructions are unclear",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "question": {"type": "string", "description": "Question to ask the user"}
+    #             },
+    #             "required": ["question"]
+    #         }
+    #     }
+    # },
+    # # only grok fast use ask question tool other llm just don't use this tool, but grok fast vision is trash
     {
         "type": "function",
         "function": {
@@ -141,6 +280,83 @@ def read_instructions():
     except Exception as e:
         return f"Error reading instructions: {e}"
 
+def save_conversation(task, messages, result):
+    """Save conversation history to JSON file"""
+    try:
+        # Load existing history
+        history = []
+        if os.path.exists(CONVERSATION_HISTORY_FILE):
+            try:
+                with open(CONVERSATION_HISTORY_FILE, 'r') as f:
+                    history = json.load(f)
+            except json.JSONDecodeError:
+                history = []
+
+        # Create conversation entry
+        conversation = {
+            "timestamp": datetime.now().isoformat(),
+            "task": task,
+            "messages": messages,
+            "result": result
+        }
+
+        # Add to history (keep most recent at the end)
+        history.append(conversation)
+
+        # Keep only last 50 conversations to avoid file bloat
+        if len(history) > 50:
+            history = history[-50:]
+
+        # Save updated history
+        with open(CONVERSATION_HISTORY_FILE, 'w') as f:
+            json.dump(history, f, indent=2)
+
+        return True
+    except Exception as e:
+        print(f"⚠️ Error saving conversation: {e}")
+        return False
+
+def load_recent_conversations(count=5):
+    """Load recent N conversations from history"""
+    try:
+        if not os.path.exists(CONVERSATION_HISTORY_FILE):
+            return []
+
+        with open(CONVERSATION_HISTORY_FILE, 'r') as f:
+            history = json.load(f)
+
+        # Return last N conversations
+        return history[-count:] if len(history) > count else history
+    except Exception as e:
+        print(f"⚠️ Error loading conversation history: {e}")
+        return []
+
+def format_conversation_context(conversations):
+    """Format recent conversations into a readable context string"""
+    if not conversations:
+        return "No previous conversation history."
+
+    context_parts = ["=== Recent Conversation History ===\n"]
+
+    for i, conv in enumerate(conversations, 1):
+        timestamp = conv.get("timestamp", "Unknown time")
+        task = conv.get("task", "Unknown task")
+        result = conv.get("result", "No result")
+
+        # Format timestamp nicely
+        try:
+            dt = datetime.fromisoformat(timestamp)
+            time_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            time_str = timestamp
+
+        context_parts.append(f"\n[{i}] {time_str}")
+        context_parts.append(f"Task: {task[:150]}{'...' if len(task) > 150 else ''}")
+        context_parts.append(f"Result: {result[:150]}{'...' if len(result) > 150 else ''}")
+        context_parts.append("-" * 60)
+
+    return "\n".join(context_parts)
+
 def execute_tool(name, args):
     """Execute tool calls"""
     if name == "bash_command":
@@ -160,11 +376,12 @@ def execute_tool(name, args):
         question = args['question']
         print(f"\n❓ Agent Question: {question}")
 
-        # Generate and play TTS audio for the question (blocking)
+        # Queue TTS audio for the question
         print("🔊 Speaking question...")
-        for _, _, audio in tts_pipeline(question, voice=tts_voice, speed=1):
-            sd.play(audio[0], samplerate=24000)
-            sd.wait()  # Block until audio finishes playing
+        queue_tts(question)
+
+        # Wait for the TTS queue to be empty before asking for input
+        tts_queue.join()
 
         user_response = input("Your answer: ")
         return user_response
