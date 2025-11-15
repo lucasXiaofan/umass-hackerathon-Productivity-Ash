@@ -287,48 +287,9 @@ tools = [
             }
         }
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "update_task",
-            "description": "Update a task by name. Can update due_date, done status, notes, etc.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Task name to find and update"
-                    },
-                    "done": {
-                        "type": "boolean",
-                        "description": "Mark task as done/undone"
-                    },
-                    "due_date": {
-                        "type": "string",
-                        "description": "New due date in YYYY-MM-DD format"
-                    },
-                    "notes": {
-                        "type": "string",
-                        "description": "Update notes path"
-                    },
-                    "deadline": {
-                        "type": "string",
-                        "description": "Update deadline for recurring tasks"
-                    }
-                },
-                "required": ["name"]
-            }
-        }
-    },
+
 ]
 
-def take_screenshot():
-    """Capture full screenshot"""
-    with mss.mss() as sct:
-        monitor = sct.monitors[1]
-        screenshot = sct.grab(monitor)
-        img = Image.frombytes('RGB', screenshot.size, screenshot.rgb)
-        return img
 
 def macos_region_screenshot():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

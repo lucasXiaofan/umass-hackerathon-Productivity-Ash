@@ -15,23 +15,28 @@ import re
 import warnings
 from time_depends_tasks import *
 from agent_log import get_recent_logs
+
+# the agent need load AgentConfig frequently to get the most update information (#TODO: this could be expensive when having a cloud database)
+# from agent_loader import AgentConfig
+
 # Suppress warnings for cleaner output
 warnings.filterwarnings('ignore')
 
 load_dotenv()
 
-# OpenAI/OpenRouter setup
-# model_name = "x-ai/grok-4-fast"
-model_name = "anthropic/claude-haiku-4.5"
-# model_name = "qwen/qwen3-vl-235b-a22b-instruct"
-# model_name = "openai/gpt-5-mini"
-# model_name = "openrouter/polaris-alpha"
+
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.getenv("OPENROUTER_API_KEY"),
 )
 
+"""
+the first usage case is still about screenshot, 
+strategy is when agent loop is activate, listen to cmd+shift+4, or cmd+shift+3, and try to save it and analyze the screenshot
 
+"""
+
+model_name = "google/gemini-2.5-flash"
 
 def run_agent_with_image(task, image_base64=None, conversation_context="", max_iter=15):
     """Run agent with optional image input and conversation context"""

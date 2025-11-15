@@ -1,0 +1,144 @@
+# agents.yaml
+
+# OpenAI/OpenRouter setup
+# model_name = "x-ai/grok-4-fast"
+# model_name = "anthropic/claude-haiku-4.5"
+# model_name = "qwen/qwen3-vl-235b-a22b-instruct" # cannot even regonize the log to avoid repeative work
+# model_name = "openai/gpt-5-mini"
+# model_name = "openrouter/polaris-alpha"
+
+# Model definitions (DRY principle)
+models:
+  multi_smart_1: "anthropic/claude-3-5-haiku"
+  multi_smart_2: "google/gemini-2.5-flash"
+  multi_fast_1: "qwen/qwen3-235b-a22b-2507"
+  multi_fast_2: "x-ai/grok-4-fast"
+  text_cheap: "openai/gpt-oss-120b"
+
+# Tool groups (reusable sets)
+context_providers:
+  datetime:
+    function: get_datetime_context
+    cache_seconds: 60
+  
+  tasks:
+    function: get_tasks_summary
+    cache_seconds: 300
+  
+  recent_logs:
+    function: get_recent_logs
+    args: [3]
+    cache_seconds: 60
+  
+  instructions:
+    function: read_instructions
+    cache_seconds: 600
+  
+  conversation:
+    function: get_conversation_summary
+    args: [5]  # last 5 messages
+    cache_seconds: 0  # never cache
+
+# Tool groups
+tool_groups:
+  knowledge: [read_instructions, update_note, get_recent_logs]
+  tasks: [get_tasks_summary, update_task, create_reminder]
+  papers: [record_paper, search_paper]
+  sessions: [start_timer, log_session]
+  conversation: [ask_user_question]
+
+# Agent definitions
+agents:
+  router:
+    model: multi_smart_1
+    role: "Conversation manager and task delegator"
+    
+    # Specify what context this agent needs
+    context_needs:
+      - datetime
+      - tasks
+      - conversation
+    
+    tools:
+      - delegate_to_agent
+      - ask_user_question
+    
+    # Use {context_name} for variables
+    prompt: |
+      You are a routing assistant. Your job:
+      1. Maintain natural conversation with user
+      2. Decide if task needs specialist agent
+      3. Delegate when needed, continue conversation when not
+
+      Available specialists:
+      - paper_agent: Record/search research papers
+      - task_agent: Create/update tasks and deadlines
+      - session_agent: Run work sessions (45min timer, breaks)
+
+      Current context:
+      {datetime}
+      Recent tasks: {tasks}
+      Conversation summary: {conversation}
+
+      If you need specialist, call delegate_to_agent(agent_name, task_description, minimal_context).
+      Otherwise respond naturally.
+
+  paper_agent:
+    model: smart
+    role: "Research paper specialist"
+    
+    context_needs:
+      - recent_logs
+    
+    tools_from_groups: [papers, conversation]
+    
+    prompt: |
+      You record research papers.
+      Extract: title, authors, key findings, baseline potential.
+      
+      Recent work context:
+      {recent_logs}
+      
+      Call record_paper when done. 
+      No conversation needed - just do the job.
+
+  task_agent:
+    model: smart
+    role: "Task and deadline manager"
+    
+    context_needs:
+      - datetime
+      - tasks
+    
+    tools_from_groups: [tasks, conversation]
+    
+    prompt: |
+      You manage tasks and deadlines.
+      
+      Current time: {datetime}
+      Existing tasks: {tasks}
+      
+      Create or update tasks. Call update_task or create_reminder.
+      No conversation needed - just do the job.
+
+  session_agent:
+    model: smart
+    role: "Work session coordinator"
+    
+    context_needs:
+      - datetime
+      - instructions
+      - recent_logs
+    
+    tools_from_groups: [sessions, knowledge, conversation]
+    
+    prompt: |
+      You run 45-min work sessions.
+      
+      Current time: {datetime}
+      User's past notes: {instructions}
+      Recent activity: {recent_logs}
+      
+      Start timer, log what was done. 
+      Quote past notes for break reminders.
+      No conversation needed - just do the job.

@@ -9,4 +9,4 @@ when record paper:
 2. use search online tool: with the paper's name and try to find github, if no github found, report no github find 
 3. leave a session waiting for user's review on the paper
 4. record the paper tracking inside /Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers , with the paper name as md file
-5. use create_task to remind user 2 days later about review the paper
+5. use create_task tool to remind user 2 days later about review the paper

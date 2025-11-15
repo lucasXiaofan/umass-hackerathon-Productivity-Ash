@@ -1,26 +1,13 @@
-# VibeThinker-1.5B Paper
-
-## Title
-Tiny Model, Big Logic: Diversity-Driven Optimization Elicits Large-Model Reasoning Ability in VibeThinker-1.5B
+# Tiny Model, Big Logic: Diversity-Driven Optimization Elicits Large-Model Reasoning Ability in VibeThinker-1.5B
 
 ## Basic Info
-- **Published**: November 8, 2025
-- **Paper ID**: 2511.06221
-- **Status**: #2 Paper of the day (DenseHub, Nov 12)
-- **Source**: arXiv
-
-## Authors
-Sen Xu, Yi Zhou, Wei Wang, Jixin Min, Zhibin Yin, Yingwei Dai, Shixi Liu, Lianyu Pang, Yirong Chen, Junlin Zhang
-(Sina Weibo Inc.)
-
-## URL
-- **Paper**: https://arxiv.org/abs/2511.06221
+- **Authors**: Sen Xu, Yi Zhou, Wei Wang, Jixin Min, Zhibin Yin, Yingwei Dai, Shixi Liu, Lianyu Pang, Yirong Chen, Junlin Zhang
+- **Affiliation**: Sina Weibo Inc.
+- **Date**: Nov. 7, 2025
 - **GitHub**: https://github.com/WeiboAI/VibeThinker
-- **Hugging Face**: https://huggingface.co/WeiboAI/VibeThinker-1.5B
-- **License**: MIT
+- **HuggingFace**: https://huggingface.co/WeiboAI/VibeThinker-1.5B
 
 ## BibTeX Citation
-```bibtex
 @misc{xu2025tinymodelbiglogic,
   title={Tiny Model, Big Logic: Diversity-Driven Optimization Elicits Large-Model Reasoning Ability in VibeThinker-1.5B},
   author={Sen Xu and Yi Zhou and Wei Wang and Jixin Min and Zhibin Yin and Yingwei Dai and Shixi Liu and Lianyu Pang and Yirong Chen and Junlin Zhang},
@@ -28,28 +15,15 @@ Sen Xu, Yi Zhou, Wei Wang, Jixin Min, Zhibin Yin, Yingwei Dai, Shixi Liu, Lianyu
   eprint={2511.06221},
   archivePrefix={arXiv},
   primaryClass={cs.AI},
-  url={https://arxiv.org/abs/2511.06221}
+  url={https://arxiv.org/abs/2511.06221},
 }
-```
 
-## Key Contributions
-- **VibeThinker-1.5B**: A 1.5B-parameter dense model with superior reasoning capabilities
-- **Spectrum-to-Signal Principle (SSP)**: Framework combining diversity-driven optimization with policy optimization
-- **Two-Stage approach**:
-  1. Two-Stage Diversity-Exploring Distillation (SFT)
-  2. MaxEnt-Guided Policy Optimization (RL)
-- **Training Cost**: Only $7,800
-- **Performance**: Outperforms DeepSeek R1 (400x larger), surpasses Magistral Medium and Claude Opus 4 on benchmarks
-- **Benchmarks**: AIME24 (80.3 vs 79.8), AIME25 (74.4 vs 70.0), HMMT25 (50.4 vs 41.7), LiveCodeBench V6 (51.1 vs 50.3)
+## Summary
+This paper introduces VibeThinker-1.5B, a 1.5B-parameter dense model that demonstrates superior reasoning capabilities compared to larger models like Magistral Medium and Claude Opus 4, while achieving performance on par with open-source models like GPT OSS-20B Medium. The model uses an innovative post-training technique centered on the “Spectrum-to-Signal Principle (SSP)” and has a total training cost of only ,800.
 
-## Status
-- [ ] Reviewed
-- [ ] Notes added
+## Notes
+- The paper challenges the assumption that small models inherently lack robust reasoning capabilities.
+- VibeThinker-1.5B outperforms many significantly larger models on challenging mathematical and coding benchmarks.
 
-## Related Papers
-- DeepSeek R1
-- Kimi k2
-- GPT OSS-20B Medium
-- Magistral Medium
-- Claude Opus 4
-
+---
+*This paper is ready for your review. Please let me know if you need any additional information or adjustments.*

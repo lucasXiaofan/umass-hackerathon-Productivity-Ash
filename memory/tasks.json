@@ -11,7 +11,7 @@
     {
       "name": "Review MDAgent paper",
       "tag": "paper_review",
-      "due_date": "2025-11-14",
+      "due_date": "2025-11-16",
       "done": false,
       "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/MDAgents.md",
       "created_at": "2025-11-13T15:44:21.464021"
@@ -19,7 +19,7 @@
     {
       "name": "Review Lumine paper - An Open Recipe for Building Generalist Agents in 3D Open Worlds",
       "tag": "paper_review",
-      "due_date": "2025-11-15",
+      "due_date": "2025-11-17",
       "done": false,
       "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/Lumine_Open_Recipe_Generalist_Agents.md",
       "created_at": "2025-11-13T15:59:45.663282"
@@ -27,7 +27,7 @@
     {
       "name": "Review Adaptive Multi-Agent Response Refinement paper",
       "tag": "paper_review",
-      "due_date": "2025-11-15",
+      "due_date": "2025-11-17",
       "done": false,
       "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/Adaptive_Multi_Agent_Response_Refinement.md",
       "created_at": "2025-11-13T18:25:27.182276"
@@ -35,7 +35,7 @@
     {
       "name": "Review Thinking with Video paper",
       "tag": "paper_review",
-      "due_date": "2025-11-15",
+      "due_date": "2025-11-17",
       "done": false,
       "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/Thinking_with_Video.md",
       "created_at": "2025-11-13T18:30:03.707135"
@@ -43,10 +43,18 @@
     {
       "name": "Review VibeThinker paper",
       "tag": "paper_review",
-      "due_date": "2025-11-15",
+      "due_date": "2025-11-17",
       "done": false,
       "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/VibeThinker.md",
       "created_at": "2025-11-13T18:32:12.410577"
+    },
+    {
+      "name": "Review Tiny Model, Big Logic: VibeThinker-1.5B paper",
+      "tag": "paper_review",
+      "due_date": "2025-11-16",
+      "done": false,
+      "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/Tiny_Model_Big_Logic_VibeThinker.md",
+      "created_at": "2025-11-14T08:46:57.945651"
     }
   ]
 }
