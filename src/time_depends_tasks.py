@@ -133,7 +133,7 @@ def auto_update_tasks():
 # LLM Interface Functions
 # ============================================================================
 
-def create_task(name, tag, due_date, done=False, notes="", deadline=None):
+def create_task(name, tag, due_date, done=False, note_directory="", comments="", deadline=None):
     """
     Create a new task (LLM-callable)
 
@@ -142,7 +142,8 @@ def create_task(name, tag, due_date, done=False, notes="", deadline=None):
         tag: hw, paper_review, meeting, office_hour, research
         due_date: YYYY-MM-DD format
         done: completion status (default False)
-        notes: path to relevant notes file
+        note_directory: path to relevant notes file/directory
+        comments: explanation of task importance, context, or details
         deadline: for recurrent tasks, final deadline (YYYY-MM-DD)
 
     Returns:
@@ -154,7 +155,8 @@ def create_task(name, tag, due_date, done=False, notes="", deadline=None):
             "tag": tag,
             "due_date": due_date,
             "done": done,
-            "notes": notes,
+            "note_directory": note_directory,
+            "comments": comments,
             "created_at": datetime.now().isoformat()
         }
 
@@ -235,8 +237,11 @@ def get_tasks_summary():
         lines.append(f"    Due Date : {task['due_date']} ({due_status})")
         lines.append(f"    Tag      : {task.get('tag', 'other')}")
 
-        if task.get("notes"):
-            lines.append(f"    Notes    : {task['notes']}")
+        if task.get("note_directory"):
+            lines.append(f"    Notes    : {task['note_directory']}")
+
+        if task.get("comments"):
+            lines.append(f"    Comments : {task['comments']}")
 
         lines.append("")  # blank line between tasks
 

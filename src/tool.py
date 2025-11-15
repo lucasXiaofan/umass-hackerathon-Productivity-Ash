@@ -35,139 +35,6 @@ CONVERSATION_HISTORY_FILE = "/Users/xiaofanlu/Documents/github_repos/hackathon-u
 os.makedirs(MEMORY_DIR, exist_ok=True)
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
-# Configure sounddevice for better audio performance
-sd.default.latency = 'low'
-sd.default.blocksize = 2048
-sd.default.prime_output_buffers_using_stream_callback = True
-
-# Initialize TTS model
-print("Loading TTS model...")
-model_id = 'prince-canuma/Kokoro-82M'
-tts_model = load_model(model_id)
-tts_pipeline = KokoroPipeline(lang_code='a', model=tts_model, repo_id=model_id)
-tts_voice = "af_heart"
-# tts_voice = "bf_emma"
-print("TTS model loaded successfully")
-
-# TTS Queue System
-tts_queue = queue.Queue()
-tts_stop_event = threading.Event()
-
-def tts_worker():
-    """Dedicated worker thread for TTS playback"""
-    print("🔊 TTS worker thread started")
-    import warnings
-    import sys
-
-    # Suppress phonemizer warnings for cleaner output
-    warnings.filterwarnings('ignore', category=UserWarning, module='phonemizer')
-
-    # Set thread priority on macOS
-    try:
-        import ctypes
-        if sys.platform == 'darwin':
-            # Set thread to higher priority on macOS
-            libc = ctypes.CDLL('/usr/lib/libc.dylib')
-            libc.pthread_setname_np(b'TTS_Audio_Worker')
-    except:
-        pass  # Ignore if priority setting fails
-
-    while not tts_stop_event.is_set():
-        try:
-            # Get text from queue with timeout
-            item = tts_queue.get(timeout=0.05)
-            if item is None:  # Poison pill to stop
-                break
-
-            text, voice, speed = item
-
-            # Skip empty or very short text
-            if not text or len(text) < 5:
-                tts_queue.task_done()
-                continue
-
-            # Generate and play audio
-            try:
-                audio_chunks = []
-
-                # Collect all audio chunks first
-                for _, _, audio in tts_pipeline(text, voice=voice, speed=speed):
-                    if tts_stop_event.is_set():
-                        break
-                    audio_chunks.append(audio[0])
-
-                # Concatenate all chunks into one buffer for smoother playback
-                if audio_chunks and not tts_stop_event.is_set():
-                    full_audio = np.concatenate(audio_chunks, axis=0)
-
-                    # Play the complete audio buffer in blocking mode
-                    # This prevents glitches from chunked playback
-                    sd.play(
-                        full_audio,
-                        samplerate=24000,
-                        blocksize=2048,
-                        blocking=True
-                    )
-
-                    # Small delay to ensure audio device is ready for next
-                    sd.sleep(5)
-
-            except Exception as tts_error:
-                # Log TTS generation errors but continue
-                print(f"\n⚠️ TTS generation error: {tts_error}")
-
-            tts_queue.task_done()
-        except queue.Empty:
-            continue
-        except Exception as e:
-            print(f"\n⚠️ TTS worker error: {e}")
-            try:
-                tts_queue.task_done()
-            except:
-                pass
-
-    print("🔊 TTS worker thread stopped")
-
-def sanitize_text_for_tts(text):
-    """Clean text for TTS to avoid phonemizer errors"""
-    import re
-
-    # Remove URLs
-    text = re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
-
-    # Remove markdown code blocks and inline code
-    text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
-    text = re.sub(r'`[^`]+`', '', text)
-
-    # Remove emojis and special unicode characters
-    text = re.sub(r'[^\w\s.,!?;:\'-]', '', text)
-
-    # Remove multiple spaces
-    text = re.sub(r'\s+', ' ', text)
-
-    # Remove very short words (likely artifacts)
-    text = ' '.join(word for word in text.split() if len(word) > 1 or word in ['I', 'a', 'A'])
-
-    return text.strip()
-
-def queue_tts(text, voice=None, speed=1.1):
-    """Add text to TTS queue for playback"""
-    cleaned_text = sanitize_text_for_tts(text)
-
-    # Only queue if text is substantial enough (at least 10 characters)
-    if cleaned_text and len(cleaned_text) >= 10:
-        v = voice if voice else tts_voice
-        tts_queue.put((cleaned_text, v, speed))
-
-def stop_tts_worker():
-    """Stop the TTS worker thread"""
-    tts_stop_event.set()
-    tts_queue.put(None)  # Poison pill
-
-# Start TTS worker thread
-tts_thread = threading.Thread(target=tts_worker, daemon=True)
-tts_thread.start()
-
 # Tool definitions
 tools = [
     {
@@ -274,9 +141,13 @@ tools = [
                         "description": "Completion status (default False)",
                         "default": False
                     },
-                    "notes": {
+                    "note_directory": {
                         "type": "string",
-                        "description": "Path to related notes file"
+                        "description": "Path to related notes file or directory"
+                    },
+                    "comments": {
+                        "type": "string",
+                        "description": "Explanation of task importance, context, or additional details"
                     },
                     "deadline": {
                         "type": "string",
@@ -287,6 +158,88 @@ tools = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "delegate_to_agent",
+            "description": "Delegate a specialized task to a worker agent. Pack ALL needed context into task_description (dates, names, details from conversation).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "agent_name": {
+                        "type": "string",
+                        "description": "Name of worker agent to delegate to",
+                        "enum": ["paper_agent", "task_agent", "session_agent"]
+                    },
+                    "task_description": {
+                        "type": "string",
+                        "description": "Complete task with ALL context worker needs: what to do, relevant details from conversation, dates, names, paths, etc. Be specific and detailed."
+                    }
+                },
+                "required": ["agent_name", "task_description"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ask_user_question",
+            "description": "Ask the user a clarifying question when instructions are unclear or need confirmation",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "Clear question to ask the user"
+                    }
+                },
+                "required": ["question"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "log_activity",
+            "description": "Log completed work or agent activity to track what has been done",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "summary": {
+                        "type": "string",
+                        "description": "One-line description of what was done"
+                    },
+                    "files_changed": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional list of file paths that were modified"
+                    }
+                },
+                "required": ["summary"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "start_session_timer",
+            "description": "Start a work session with countdown timer and motivational notifications. Sends reminder 2 minutes before time is up.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "duration_minutes": {
+                        "type": "integer",
+                        "description": "Session duration in minutes (e.g., 25 for Pomodoro, 45 for deep work)"
+                    },
+                    "session_name": {
+                        "type": "string",
+                        "description": "Name of the work session (e.g., 'Writing', 'Coding', 'Research')"
+                    }
+                },
+                "required": ["duration_minutes", "session_name"]
+            }
+        }
+    }
 
 ]
 
@@ -316,6 +269,69 @@ def image_to_base64(img):
     img.save(buffered, format="PNG")
     img_bytes = buffered.getvalue()
     return base64.b64encode(img_bytes).decode('utf-8')
+
+def describe_image_with_vision(image_base64, model_name="google/gemini-2.0-flash-exp:free", prompt="Describe this image in detail."):
+    """
+    Use a vision model to describe an image
+
+    Args:
+        image_base64: Base64 encoded image string
+        model_name: Vision model to use (default: gemini-2.0-flash-exp)
+        prompt: What to ask about the image
+
+    Returns:
+        Text description from the model
+    """
+    from openai import OpenAI
+
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.getenv("OPENROUTER_API_KEY"),
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{image_base64}"}
+                    }
+                ]
+            }]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Vision model error: {str(e)}"
+
+def transcribe_audio(audio_path, model_name="openai/whisper-large-v3"):
+    """
+    Transcribe audio file using OpenRouter
+
+    Args:
+        audio_path: Path to audio file
+        model_name: Transcription model to use
+
+    Returns:
+        Transcription text
+
+    Note: Currently OpenRouter doesn't support audio files directly.
+          This would need to use OpenAI Whisper API directly or convert audio to text another way.
+    """
+    # OpenRouter doesn't support audio transcription endpoints yet
+    # This is a placeholder for when they add support or for direct OpenAI API usage
+    try:
+        import whisper
+        model = whisper.load_model("base")
+        result = model.transcribe(audio_path)
+        return result["text"]
+    except ImportError:
+        return "Error: whisper library not installed. Install with: pip install openai-whisper"
+    except Exception as e:
+        return f"Transcription error: {str(e)}"
 
 def read_instructions():
     try:
@@ -402,6 +418,40 @@ def format_conversation_context(conversations):
 
     return "\n".join(context_parts)
 
+def get_datetime_context():
+    """Return current date/time context as formatted string"""
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")  # e.g., 2025-11-15
+    current_time = now.strftime("%H:%M:%S")  # e.g., 14:30:45
+    current_weekday = now.strftime("%A")     # e.g., Friday
+
+    return f"Current Date: {current_date} ({current_weekday})\nCurrent Time: {current_time}"
+
+def get_conversation_summary(count=5):
+    """Get concise summary of last N conversations"""
+    conversations = load_recent_conversations(count)
+
+    if not conversations:
+        return "No recent conversations."
+
+    summary_parts = []
+    for conv in conversations:
+        timestamp = conv.get("timestamp", "Unknown time")
+        task = conv.get("task", "Unknown task")
+
+        # Format timestamp
+        try:
+            dt = datetime.fromisoformat(timestamp)
+            time_str = dt.strftime("%m-%d %H:%M")
+        except:
+            time_str = timestamp
+
+        # Keep it concise
+        # task_short = task[:80] + "..." if len(task) > 80 else task
+        summary_parts.append(f"[{time_str}] {task}")
+
+    return "\n".join(summary_parts)
+
 def execute_tool(name, args):
     """Execute tool calls"""
     if name == "bash_command":
@@ -417,12 +467,13 @@ def execute_tool(name, args):
             tag=args["tag"],
             due_date=args["due_date"],
             done=args.get("done", False),
-            notes=args.get("notes", ""),
+            note_directory=args.get("note_directory", ""),
+            comments=args.get("comments", ""),
             deadline=args.get("deadline")
         )
 
         # Auto-log task creation
-        log_activity(f"Created task: {args['name']} (due {args['due_date']}) notes: {args.get('notes', '')}")
+        log_activity(f"Created task: {args['name']} (due {args['due_date']}) notes: {args.get('note_directory', '')}")
 
         return str(result)
 
@@ -454,19 +505,6 @@ def execute_tool(name, args):
         except Exception as e:
             return f"Error updating instructions: {e}"
 
-    elif name == "ask_user_question":
-        question = args['question']
-        print(f"\n❓ Agent Question: {question}")
-
-        # Queue TTS audio for the question
-        print("🔊 Speaking question...")
-        queue_tts(question)
-
-        # Wait for the TTS queue to be empty before asking for input
-        tts_queue.join()
-
-        user_response = input("Your answer: ")
-        return user_response
 
     elif name == "create_memory_file":
         try:
@@ -529,4 +567,117 @@ def execute_tool(name, args):
         except Exception as e:
             return f"Error during search: {str(e)}"
 
+    elif name == "delegate_to_agent":
+        # This will be called by manager_agent.py
+        # Return a marker that the manager will handle
+        return {
+            "delegation": True,
+            "agent_name": args["agent_name"],
+            "task_description": args["task_description"],
+            "extra_context": args.get("extra_context", "")
+        }
+
+    elif name == "ask_user_question":
+        # Interactive question - manager will handle this
+        print(f"\n❓ Agent question: {args['question']}")
+        user_response = input("Your answer: ")
+        return f"User answered: {user_response}"
+
+    elif name == "start_session_timer":
+        import random
+
+        duration = args["duration_minutes"]
+        session_name = args["session_name"]
+
+        # Motivational messages inspired by productivity principles
+        motivational_messages = [
+            "Remember to take a break. Sustained focus requires regular rest.",
+            "Balance is key. Even a short pause can refresh your mind.",
+            "Your wellbeing matters. Regular breaks improve long-term productivity.",
+            "Sharpen the saw. Taking time to recharge makes you more effective.",
+            "Quality over quantity. Rest is part of the creative process.",
+            "Protect your energy. Short breaks prevent burnout.",
+            "Self-care isn't selfish. It's essential for sustained excellence.",
+            "Listen to your body. Breaks are investments, not interruptions."
+        ]
+
+        motivation = random.choice(motivational_messages)
+
+        # Launch standalone menu bar timer as separate process
+        timer_script = os.path.join(os.path.dirname(__file__), "menubar_timer.py")
+
+        try:
+            # Run timer in background process (detached)
+            subprocess.Popen([
+                "python3",
+                timer_script,
+                str(duration),
+                session_name,
+                motivation
+            ], start_new_session=True)
+
+            print(f"✅ Menu bar timer started: {duration} minutes")
+
+        except Exception as e:
+            print(f"Could not start menu bar timer: {e}")
+
+        # TTS announcement at start
+        try:
+            from tts_pipeline import queue_tts
+            queue_tts(f"Starting your {duration} minute {session_name} session. I'll remind you when you have 2 minutes left.")
+        except:
+            pass
+
+        # Send immediate notification
+        try:
+            from pync import Notifier
+            Notifier.notify(
+                f"{duration} minutes - Check your menu bar!",
+                title=f"⏱️ {session_name} Session Started",
+                sound="Glass"
+            )
+        except:
+            pass
+
+        return f"✅ Started {duration}-minute session: {session_name}. Check your menu bar for the countdown!"
+
     return "Unknown tool"
+
+
+# ============================================================================
+# Test Functions
+# ============================================================================
+
+def test_countdown_timer(duration_minutes=1, session_name="Test Session"):
+    """
+    Test the countdown timer without LLM
+
+    Usage:
+        from tool import test_countdown_timer
+        test_countdown_timer(1, "Quick Test")  # 1 minute timer
+    """
+    print(f"\n🧪 Testing countdown timer: {duration_minutes} min - {session_name}")
+
+    # Simulate the tool call
+    result = execute_tool("start_session_timer", {
+        "duration_minutes": duration_minutes,
+        "session_name": session_name
+    })
+
+    print(f"Result: {result}")
+    print("\n👀 Check your menu bar for: ⏱ MM:SS")
+    print(f"Timer will notify you at {duration_minutes-2} min mark (if >2 min)")
+
+    return result
+
+
+if __name__ == "__main__":
+    # Quick test when running tool.py directly
+    print("=== COUNTDOWN TIMER TEST ===\n")
+    print("Testing 1-minute countdown...")
+    test_countdown_timer(duration_minutes=1, session_name="Quick Test")
+
+    print("\n✅ Timer launched! Check your menu bar.")
+    print("The timer icon (⏱) should appear in ~1 second.")
+    print("\nTo test longer sessions:")
+    print("  python -c 'from tool import test_countdown_timer; test_countdown_timer(3, \"Test\")'")

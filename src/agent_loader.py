@@ -33,8 +33,13 @@ class ContextManager:
             # Call provider function
             func_name = provider["function"]
             args = provider.get("args", [])
-            
+
             try:
+                # Import functions dynamically to avoid circular imports
+                from tool import get_datetime_context, get_conversation_summary, read_instructions
+                from time_depends_tasks import get_tasks_summary
+                from agent_log import get_recent_logs
+
                 # Call your actual functions
                 if func_name == "get_datetime_context":
                     result = get_datetime_context()
@@ -67,19 +72,8 @@ class AgentConfig:
             self.config = yaml.safe_load(f)
         
         self.context_manager = ContextManager(self.config)
-        self._expand_tools()
     
-    def _expand_tools(self):
-        """Replace tool_groups references with actual tool lists"""
-        for agent_name, agent_config in self.config["agents"].items():
-            if "tools_from_groups" in agent_config:
-                tools = []
-                for group in agent_config["tools_from_groups"]:
-                    tools.extend(self.config["tool_groups"][group])
-                agent_config.setdefault("tools", []).extend(tools)
-                del agent_config["tools_from_groups"]
-    
-    def get_agent(self, name: str, extra_context: Dict[str, str] = None) -> dict:
+    def get_agent(self, name: str) -> dict:
         """Get agent config with context injected into prompt"""
         agent = self.config["agents"][name]
         
@@ -87,9 +81,6 @@ class AgentConfig:
         context_needs = agent.get("context_needs", [])
         context = self.context_manager.get_context(context_needs)
         
-        # Allow extra context (e.g., from delegation)
-        if extra_context:
-            context.update(extra_context)
         
         # Inject context into prompt using .format()
         try:

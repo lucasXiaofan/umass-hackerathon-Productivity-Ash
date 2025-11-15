@@ -9,58 +9,19 @@ from pynput import keyboard
 from PIL import ImageGrab
 from pync import Notifier
 import rumps
-from streaming_agent import run_agent_with_image
-
-# ============================================
-# PSEUDO FUNCTIONS
-# ============================================
-
-def load_recent_conversations(*args, **kwargs):
-    """Mock function - accepts any arguments"""
-    print(f"📚 load_recent_conversations called with: args={args}, kwargs={kwargs}")
-    return [
-        {"timestamp": "2025-11-15 10:30", "content": "Previous conversation 1"},
-        {"timestamp": "2025-11-15 09:15", "content": "Previous conversation 2"}
-    ]
-
-
-def format_conversation_context(*args, **kwargs):
-    """Mock function - accepts any arguments"""
-    print(f"📝 format_conversation_context called with: args={args}, kwargs={kwargs}")
-    return "Context: User has been working on AI agent project..."
-
-
-# def run_agent_with_image(*args, **kwargs):
-#     """Mock function - accepts any arguments and returns formatted result"""
-#     print(f"🤖 run_agent_with_image called with:")
-#     print(f"   args length: {len(args)}")
-#     print(f"   kwargs keys: {kwargs.keys()}")
-    
-#     # Extract what we can from args/kwargs
-#     prompt = args[0] if args else kwargs.get('prompt', 'No prompt')
-#     image = args[1] if len(args) > 1 else kwargs.get('image_base64', 'No image')
-    
-#     # Show we captured the data
-#     result = f"""✓ Successfully captured:
-# - Text command: {prompt[:100]}...
-# - Screenshot: {len(image)} characters (base64)
-# - Timestamp: {datetime.now().strftime('%H:%M:%S')}
-
-# Mock agent processed your request!"""
-    
-#     return result
+from manager_agent import run_manager_agent
 
 
 # ============================================
 # MINIMAL AGENT CODE
 # ============================================
 
-class MinimalAgent(rumps.App):
+class BackgroundRunner(rumps.App):
     """Minimal background agent with hotkey support"""
     
     def __init__(self):
         super().__init__("🤖")
-        self.avatar_path = os.path.abspath("images/A_1.png")
+        self.avatar_path = os.path.abspath("/Users/xiaofanlu/Documents/github_repos/hackathon-umass/avatars/melina 2/melina-cute-256.png")
         
         # Queue for communicating between threads
         self.screenshot_queue = queue.Queue()
@@ -164,31 +125,26 @@ class MinimalAgent(rumps.App):
         """Async agent processing"""
         try:
             self.notify("Processing...", text[:50])
-            
-            # Load conversation context
-            recent_conversations = load_recent_conversations(count=5)
-            context = format_conversation_context(recent_conversations)
-            
-            # Enhanced prompt with screenshot context
-            full_prompt = f"""User command: {text}
+
+            # Build task for manager agent
+            # Manager will handle all context (conversation, tasks, logs, etc.)
+            task = f"""User command: {text}
 
 A screenshot is provided showing the current context.
 
-image analysis instructions:
-1. describe what is inside the image
-2. if image has text, makesure to output the text content as accurate as possible
+Image analysis instructions:
+1. Describe what is inside the image
+2. If image has text, output the text content as accurately as possible
+3. Based on the image and user command, decide what action to take
+4. Delegate to appropriate worker agent if needed (paper_agent, task_agent, session_agent)
 """
-            
-            # Send to agent with both text and image
-            result = run_agent_with_image(
-                full_prompt, 
-                screenshot_base64,
-                conversation_context=context
-            )
-            
+
+            # Send to manager agent with image
+            result = run_manager_agent(task, image_base64=screenshot_base64)
+
             # Show result notification
             self.notify_result(result)
-            
+
         except Exception as e:
             print(f"❌ Error: {e}")
             import traceback
@@ -232,7 +188,7 @@ Instructions:
 
 Starting agent...
 """)
-    MinimalAgent().run()
+    BackgroundRunner().run()
 
 
 if __name__ == "__main__":

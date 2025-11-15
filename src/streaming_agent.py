@@ -15,6 +15,7 @@ import re
 import warnings
 from time_depends_tasks import *
 from agent_log import get_recent_logs
+from tts_pipeline import queue_tts, stop_tts, wait_tts_done
 
 # the agent need load AgentConfig frequently to get the most update information (#TODO: this could be expensive when having a cloud database)
 # from agent_loader import AgentConfig
@@ -254,9 +255,8 @@ def main():
         print("\n👋 Shutting down...")
     finally:
         hotkey_listener.stop()
-        # Stop TTS worker thread
-        stop_tts_worker()
-        tts_thread.join(timeout=2)
+        # Stop TTS pipeline
+        stop_tts()
 
 if __name__ == "__main__":
     main()

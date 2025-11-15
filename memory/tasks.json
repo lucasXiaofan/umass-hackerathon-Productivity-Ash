@@ -55,6 +55,75 @@
       "done": false,
       "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/Tiny_Model_Big_Logic_VibeThinker.md",
       "created_at": "2025-11-14T08:46:57.945651"
+    },
+    {
+      "name": "Review paper: MUSE: Planning & Execution Agent with Memory Module",
+      "tag": "paper_review",
+      "due_date": "2025-11-17",
+      "done": false,
+      "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/MUSE.md",
+      "created_at": "2025-11-15T15:34:19.284096"
+    },
+    {
+      "name": "Review paper: A-MEM: Agentic Memory for LLM Agents",
+      "tag": "paper_review",
+      "due_date": "2025-11-17",
+      "done": false,
+      "notes": "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/A-MEM.md",
+      "created_at": "2025-11-15T15:34:19.285161"
+    },
+    {
+      "name": "Write review for Learning on the Job paper",
+      "tag": "paper_review",
+      "due_date": "2025-11-17",
+      "done": false,
+      "notes": "",
+      "created_at": "2025-11-15T16:02:28.400950"
+    },
+    {
+      "name": "Use MiniMax M2 model for agent",
+      "tag": "research",
+      "due_date": "2025-11-22",
+      "done": false,
+      "note_directory": "",
+      "comments": "MiniMax M2 - compact high-efficiency LLM (2.3B parameters) optimized for end-to-end coding and agentic workflows. Good for low latency and deployment efficiency. Reference: https://openrouter.ai/minimax/minimax-m2",
+      "created_at": "2025-11-15T16:26:32.234471"
+    },
+    {
+      "name": "Use MiniMax M2 model for agent",
+      "tag": "research",
+      "due_date": "2025-11-15",
+      "done": false,
+      "note_directory": "",
+      "comments": "Reminder to explore and integrate MiniMax M2 model for agent development. Model info: MiniMax M2 from OpenRouter with multiple providers (MiniMax, Chutes, DeepInfra) available.",
+      "created_at": "2025-11-15T16:27:39.989706"
+    },
+    {
+      "name": "Review Tiny Model, Big Logic: VibeThinker-1.5B paper",
+      "tag": "paper_review",
+      "due_date": "2025-11-16",
+      "done": true,
+      "note_directory": "",
+      "comments": "",
+      "created_at": "2025-11-15T16:29:31.493593"
+    },
+    {
+      "name": "Review MDAgent paper",
+      "tag": "paper_review",
+      "due_date": "2025-11-16",
+      "done": true,
+      "note_directory": "",
+      "comments": "",
+      "created_at": "2025-11-15T16:29:31.496849"
+    },
+    {
+      "name": "Write review for Learning on the Job paper",
+      "tag": "paper_review",
+      "due_date": "2025-11-17",
+      "done": true,
+      "note_directory": "",
+      "comments": "",
+      "created_at": "2025-11-15T16:29:31.497513"
     }
   ]
 }
