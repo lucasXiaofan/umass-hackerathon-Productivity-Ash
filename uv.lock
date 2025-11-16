@@ -1601,7 +1601,9 @@ dependencies = [
     { name = "gradio" },
     { name = "mlx-audio" },
     { name = "mss" },
+    { name = "numpy" },
     { name = "openai" },
+    { name = "openai-whisper" },
     { name = "osxphotos" },
     { name = "pillow" },
     { name = "pyautogui" },
@@ -1609,6 +1611,7 @@ dependencies = [
     { name = "pync" },
     { name = "pynput" },
     { name = "rumps" },
+    { name = "scipy" },
     { name = "setuptools" },
     { name = "sounddevice" },
 ]
@@ -1627,7 +1630,9 @@ requires-dist = [
     { name = "gradio", specifier = ">=3.36.1" },
     { name = "mlx-audio", specifier = ">=0.2.6" },
     { name = "mss", specifier = ">=10.1.0" },
+    { name = "numpy", specifier = ">=2.3.4" },
     { name = "openai", specifier = ">=2.7.1" },
+    { name = "openai-whisper", specifier = ">=20250625" },
     { name = "osxphotos", specifier = ">=0.74.0" },
     { name = "pillow", specifier = ">=10.0.0,<12.0.0" },
     { name = "pyautogui", specifier = ">=0.9.54" },
@@ -1635,6 +1640,7 @@ requires-dist = [
     { name = "pync", specifier = ">=2.0.3" },
     { name = "pynput", specifier = ">=1.8.1" },
     { name = "rumps", specifier = ">=0.4.0" },
+    { name = "scipy", specifier = ">=1.16.3" },
     { name = "setuptools", specifier = ">=80.9.0" },
     { name = "sounddevice", specifier = ">=0.5.3" },
 ]
@@ -3128,6 +3134,21 @@ sdist = { url = "https://files.pythonhosted.org/packages/51/a2/f4023c1e0c868a6a5
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8c/74/6bfc3adc81f6c2cea4439f2a734c40e3a420703bbcdc539890096a732bbd/openai-2.7.1-py3-none-any.whl", hash = "sha256:2f2530354d94c59c614645a4662b9dab0a5b881c5cd767a8587398feac0c9021", size = 1008780, upload-time = "2025-11-04T06:07:20.818Z" },
 ]
+
+[[package]]
+name = "openai-whisper"
+version = "20250625"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "more-itertools" },
+    { name = "numba" },
+    { name = "numpy" },
+    { name = "tiktoken" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "triton", marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or sys_platform == 'linux2'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/35/8e/d36f8880bcf18ec026a55807d02fe4c7357da9f25aebd92f85178000c0dc/openai_whisper-20250625.tar.gz", hash = "sha256:37a91a3921809d9f44748ffc73c0a55c9f366c85a3ef5c2ae0cc09540432eb96", size = 803191, upload-time = "2025-06-26T01:06:13.34Z" }
 
 [[package]]
 name = "opencv-python"
