@@ -16,6 +16,7 @@ FLOW_DIR = "/Users/xiaofanlu/Documents/road/FLOW"
 DIARY_DIR = os.path.join(FLOW_DIR, "diary")
 RESEARCH_FILE = os.path.join(FLOW_DIR, "projects/research-uncertainty-reasoning-agentic-path-01-10-25.md")
 DIARY_TEMPLATE = "/Users/xiaofanlu/Documents/road/template/diary.md"
+PAPERS_DIR = os.path.join(FLOW_DIR, "areas/papers")
 
 # OpenRouter client
 client = OpenAI(
@@ -36,6 +37,33 @@ def get_assets_dir():
     assets_dir = os.path.join(DIARY_DIR, "assets", today)
     os.makedirs(assets_dir, exist_ok=True)
     return assets_dir
+
+
+def load_all_papers():
+    """Load all paper markdown files as a single string context
+
+    Returns:
+        str: Concatenated content of all paper markdown files
+    """
+    os.makedirs(PAPERS_DIR, exist_ok=True)
+
+    papers_content = []
+
+    if os.path.exists(PAPERS_DIR):
+        for filename in sorted(os.listdir(PAPERS_DIR)):
+            if filename.endswith('.md'):
+                filepath = os.path.join(PAPERS_DIR, filename)
+                try:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        papers_content.append(f"=== {filename} ===\n{content}\n")
+                except Exception as e:
+                    print(f"⚠️ Error reading {filename}: {e}")
+
+    if papers_content:
+        return "\n".join(papers_content)
+    else:
+        return "No papers tracked yet."
 
 
 def ensure_diary():
@@ -82,7 +110,7 @@ def save_image(image_base64):
 
 def classify(text_input=None, image_base64=None, model="qwen/qwen3-vl-235b-a22b-instruct"):
     """
-    Classify: research or diary?
+    Classify: research or diary? Detect if new paper.
 
     Returns:
         dict: {

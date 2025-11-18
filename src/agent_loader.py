@@ -36,7 +36,7 @@ class ContextManager:
 
             try:
                 # Import functions dynamically to avoid circular imports
-                from tool import get_datetime_context, get_conversation_summary, read_instructions
+                from tool import get_datetime_context, get_conversation_summary, read_instructions, get_paper_template
                 from time_depends_tasks import get_tasks_summary
                 from agent_log import get_recent_logs
 
@@ -51,6 +51,8 @@ class ContextManager:
                     result = read_instructions()
                 elif func_name == "get_conversation_summary":
                     result = get_conversation_summary(*args)
+                elif func_name == "get_paper_template":
+                    result = get_paper_template()
                 else:
                     result = f"[Unknown function: {func_name}]"
                 

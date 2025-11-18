@@ -30,7 +30,7 @@ client = OpenAI(
 
 # Load agent config
 agent_config = AgentConfig("src/agents_config.yaml")
-
+print(agent_config.get_agent("paper_agent")['system_prompt'])
 def run_worker_agent(agent_name, task_description, max_iter=15):
     """
     Execute a worker agent with a specific task
@@ -61,7 +61,7 @@ def run_worker_agent(agent_name, task_description, max_iter=15):
         {"role": "system", "content": agent["system_prompt"]},
         user_message
     ]
-
+    print(f"{agent['system_prompt']}")
     # Get tool list for this agent
     agent_tools = []
     for tool_name in agent.get("tools", []):
@@ -299,6 +299,61 @@ def run_manager_agent(task, image_base64=None, max_iter=15):
     final_result = "Manager max iterations reached"
     save_conversation(task, final_result, "")
     return final_result
+
+
+# Shortcuts for background_handler integration
+def shortcut_text(text):
+    """
+    Text-only shortcut for background handler
+
+    Args:
+        text: User's text input
+
+    Returns:
+        dict: {
+            "target": "agent",
+            "file": "N/A",
+            "user_comment": text,
+            "ai_content": response,
+            "image": None
+        }
+    """
+    response = run_manager_agent(text)
+    return {
+        "target": "agent",
+        "file": "N/A",  # Manager handles its own file operations
+        "user_comment": text,
+        "ai_content": response,
+        "image": None
+    }
+
+
+def shortcut_screenshot(image_base64, comment=""):
+    """
+    Screenshot + optional comment shortcut for background handler
+
+    Args:
+        image_base64: Base64 encoded screenshot
+        comment: Optional user comment
+
+    Returns:
+        dict: {
+            "target": "agent",
+            "file": "N/A",
+            "user_comment": comment,
+            "ai_content": response,
+            "image": "processed"
+        }
+    """
+    task = comment if comment else "Analyze this screenshot"
+    response = run_manager_agent(task, image_base64=image_base64)
+    return {
+        "target": "agent",
+        "file": "N/A",  # Manager handles its own file operations
+        "user_comment": comment,
+        "ai_content": response,
+        "image": "processed"
+    }
 
 
 def main():

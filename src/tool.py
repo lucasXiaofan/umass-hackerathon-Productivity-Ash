@@ -452,6 +452,17 @@ def get_conversation_summary(count=5):
 
     return "\n".join(summary_parts)
 
+def get_paper_template():
+    """Load paper markdown template from file"""
+    template_path = "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/paper-templates/paper_markdown_template.md"
+    try:
+        with open(template_path, 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "[Template not found at: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/paper-templates/paper_markdown_template.md]"
+    except Exception as e:
+        return f"[Error loading template: {e}]"
+
 def execute_tool(name, args):
     """Execute tool calls"""
     if name == "bash_command":

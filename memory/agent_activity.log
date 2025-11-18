@@ -1,12 +1,15 @@
-[2025-11-13 18:25:27] Created task: Review Adaptive Multi-Agent Response Refinement paper (due 2025-11-15)
-[2025-11-13 18:30:03] Created task: Review Thinking with Video paper (due 2025-11-15) notes: /Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/Thinking_with_Video.md
-[2025-11-13 18:32:12] Created task: Review VibeThinker paper (due 2025-11-15) notes: /Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/VibeThinker.md
-[2025-11-15 15:34:19] Created task: Review paper: MUSE: Planning & Execution Agent with Memory Module (due 2025-11-17) notes: /Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/MUSE.md
-[2025-11-15 15:34:19] Created task: Review paper: A-MEM: Agentic Memory for LLM Agents (due 2025-11-17) notes: /Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/A-MEM.md
-[2025-11-15 15:34:19] Tracked paper: MUSE: Planning & Execution Agent with Memory Module; A-MEM: Agentic Memory for LLM Agents | Files: /Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/MUSE.md, /Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/A-MEM.md
-[2025-11-15 16:02:28] Created task: Write review for Learning on the Job paper (due 2025-11-15) notes: 
-[2025-11-15 16:26:32] Created task: Use MiniMax M2 model for agent (due 2025-11-22) notes: 
-[2025-11-15 16:27:39] Created task: Use MiniMax M2 model for agent (due 2025-11-15) notes: 
-[2025-11-15 16:29:31] Created task: Review Tiny Model, Big Logic: VibeThinker-1.5B paper (due 2025-11-16) notes: 
-[2025-11-15 16:29:31] Created task: Review MDAgent paper (due 2025-11-16) notes: 
-[2025-11-15 16:29:31] Created task: Write review for Learning on the Job paper (due 2025-11-17) notes: 
+[2025-11-16 21:09:00] Created task: Review paper: Learning on the Job: An Experience-Driven Self-Evolving Agent for Long-Horizon Tasks (due 2025-11-18) notes: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/MUSE.md
+[2025-11-16 21:09:29] Created task: Review paper: A-Mem: Agentic Memory for LLM Agents (due 2025-11-18) notes: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/A-Mem.md
+[2025-11-16 21:09:29] Tracked paper: A-Mem: Agentic Memory for LLM Agents | Files: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/A-Mem.md
+[2025-11-17 16:17:18] Created task: Review paper: Triplet-Structured Knowledge Integration for Multi-Turn Medical Reasoning (due 2025-11-19) notes: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/Triplet_Structured_Knowledge_Integration_for_Multi_Turn_Medical_Reasoning.md
+[2025-11-17 16:17:18] Tracked paper: Triplet-Structured Knowledge Integration for Multi-Turn Medical Reasoning | Files: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/Triplet_Structured_Knowledge_Integration_for_Multi_Turn_Medical_Reasoning.md
+[2025-11-17 16:23:05] Created task: Review paper: Doctor-R1: Mastering Clinical Inquiry with Experiential Agentic Reinforcement Learning (due 2025-11-19) notes: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/Doctor-R1.md
+[2025-11-17 16:23:05] Tracked paper: Doctor-R1: Mastering Clinical Inquiry with Experiential Agentic Reinforcement Learning | Files: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/Doctor-R1.md
+[2025-11-17 16:26:00] Created task: Review paper: Baichuan-M2: Scaling Medical Capability with Large Verifier System (due 2025-11-19) notes: /Users/xiaohanlu/Documents/road/FLOW/areas/papers/Baichuan-M2_Scaling_Medical_Capability_with_Large_Verifier_System.md
+[2025-11-17 16:26:00] Tracked paper: Baichuan-M2: Scaling Medical Capability with Large Verifier System | Files: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/Baichuan-M2_Scaling_Medical_Capability_with_Large_Verifier_System.md
+[2025-11-17 16:38:26] Created task: Review paper: HealthBench: Evaluating Large Language Models Towards Improved Human Health (due 2025-11-19) notes: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/HealthBench_2025.md
+[2025-11-17 16:38:26] Tracked paper: HealthBench: Evaluating Large Language Models Towards Improved Human Health | Files: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/HealthBench_2025.md
+[2025-11-17 17:42:07] Created task: Review paper: MEDDxAgent: A Unified Modular Agent Framework for Explainable Automatic Differential Diagnosis (due 2025-11-19) notes: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/MEDDxAgent.md
+[2025-11-17 17:42:07] Tracked paper: MEDDxAgent: A Unified Modular Agent Framework for Explainable Automatic Differential Diagnosis | Files: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/MEDDxAgent.md
+[2025-11-17 17:55:32] Created task: Review paper: Towards Conversational Diagnostic AI (due 2025-11-19) notes: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/towards-conversational-diagnostic-ai.md
+[2025-11-17 17:55:32] Tracked paper: Towards Conversational Diagnostic AI | Files: /Users/xiaofanlu/Documents/road/FLOW/areas/papers/towards-conversational-diagnostic-ai.md

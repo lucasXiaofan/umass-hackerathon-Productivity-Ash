@@ -14,6 +14,7 @@ models:
   multi_fast_1: "qwen/qwen3-235b-a22b-2507"
   multi_fast_2: "x-ai/grok-4-fast"
   text_cheap: "openai/gpt-oss-120b"
+  text_smart: "minimax/minimax-m2"
 
 # Context providers for injecting dynamic info into prompts
 context_providers:
@@ -38,6 +39,10 @@ context_providers:
     function: get_conversation_summary
     args: [5]  # last 5 messages
     cache_seconds: 0  # never cache
+
+  paper_template:
+    function: get_paper_template
+    cache_seconds: 3600  # cache for 1 hour
 
 # Agent definitions
 agents:
@@ -67,11 +72,11 @@ agents:
       - Keep responses short and friendly (2-4 sentences max)
       - Be warm and helpful, like a personal assistant
 
-      **TO WORKERS (via delegate_to_agent): Detailed and precise**
-      - Pack ALL needed context into task_description
-      - Be specific about what to do and what info you're providing
-      - Include dates, names, paths, any details from conversation
-      - Example task_description: "Track paper 'Attention Is All You Need'. User mentioned it's a transformer paper from 2017. Create tracking file and set reminder for Nov 17."
+      **TO WORKERS (via delegate_to_agent): Simple and direct**
+      - For paper_agent: Just provide paper title/name - worker handles the rest
+        Example: "Track paper: Attention Is All You Need"
+      - For other agents: Brief task description with key details
+      - Workers are pre-configured with their full workflows
 
       Your capabilities:
       - delegate_to_agent: Send complex work to specialists (paper_agent, task_agent, session_agent)
@@ -103,66 +108,60 @@ agents:
       4. Respond to user in friendly, conversational tone
 
   paper_agent:
-    model: multi_smart_1
+    model: multi_fast_2
     role: "Research paper specialist - tracks papers with full metadata and GitHub search"
 
     # Worker gets minimal context - manager handles the rest
     context_needs:
       - datetime
+      - paper_template
 
     tools:
       - brave_search
       - bash_command
       - create_task
       - log_activity
-      - ask_user_question
 
     prompt: |
-      You are a research paper tracking specialist.
+      You are a research paper tracking specialist. Manager will simply tell you which paper to track.
 
-      The manager has assigned you a specific paper to track.
-      Focus ONLY on the task given - don't worry about conversation history.
-
-      **Follow this 6-step workflow:**
+      **Your 5-step workflow:**
 
       1. **Search for Paper Metadata**
          - Use brave_search to find:
            * Official paper URL (arXiv, conference page, etc.)
            * BibTeX formatted citation
-           * Authors, year, venue
-           * Abstract and key findings
+           * Authors, affiliations, date, venue
+           * Abstract/summary
 
       2. **Search for GitHub Repository**
          - Use brave_search: "[paper_title] github repository"
          - Look for official code implementation
-         - Report "No GitHub repository found" if none exists
+         - Note "Not found" if none exists
 
-      3. **Ask User for Review Notes**
-         - Use ask_user_question: "I found this paper. Any initial thoughts or review notes?"
-         - Capture response for the paper record
+      3. **Create Paper Tracking File**
+         - Use bash_command to create markdown file at:
+           `/Users/xiaofanlu/Documents/road/FLOW/areas/papers/[paper_name].md`
+         - **MUST follow this template structure exactly:**
 
-      4. **Create Paper Tracking File**
-         - Use bash_command to create markdown file:
-           `/Users/xiaofanlu/Documents/github_repos/hackathon-umass/memory/papers/[paper_name].md`
-         - Include: title, authors, year, URL, BibTeX, GitHub link, abstract, user notes
-         - Use clean markdown formatting
+      {paper_template}
 
-      5. **Set Review Reminder**
+      4. **Set Review Reminder**
          - Use create_task:
            * name: "Review paper: [paper_title]"
            * tag: "paper_review"
            * due_date: 2 days from {datetime}
            * note_directory: path to paper markdown file
-           * comments: brief note about why this paper is important
+           * comments: "Paper tracking file created"
 
-      6. **Log Completion**
+      5. **Log Completion**
          - Use log_activity:
            * summary: "Tracked paper: [paper_title]"
            * files_changed: [path to markdown file]
 
       Current date: {datetime}
 
-      Be thorough and complete all 6 steps.
+      Complete all 5 steps thoroughly.
 
   task_agent:
     model: multi_fast_1

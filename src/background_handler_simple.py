@@ -3,9 +3,14 @@ Simple Background Handler with Two Shortcuts
 
 Shortcut 1 (Cmd+Shift+T): Text input → Classify → Append
 Shortcut 2 (Cmd+Shift+4): Screenshot → Text input → Classify → Append with image
+
+Modes:
+- simple (default): Uses simple_classifier for quick classification
+- agent: Uses manager_agent for full agent system with delegation
 """
 
 import os
+import sys
 import base64
 import threading
 import queue
@@ -14,21 +19,33 @@ import logging
 from pynput import keyboard
 from pync import Notifier
 import rumps
-from simple_classifier import shortcut_text, shortcut_screenshot
+import argparse
 
 # Suppress pynput keyboard errors (F11/F12 volume keys cause KeyError)
-logging.getLogger('pynput').setLevel(logging.CRITICAL)
-logging.getLogger('pynput.keyboard').setLevel(logging.CRITICAL)
+# logging.getLogger('pynput').setLevel(logging.CRITIHello wait, what so the Mac has built in text to speech搜1C可以说中文吗？我靠，好搞笑，麦克搞半天麦克有自己的takes to speak，而且效果还不错，我操，这个破防了呀。
 
 
 class SimpleBackgroundHandler(rumps.App):
     """Background handler with two shortcuts"""
 
-    def __init__(self):
-        super().__init__("📝")
+    def __init__(self, mode='simple'):
+        super().__init__("📝" if mode == 'simple' else "🤖")
+        self.mode = mode
         self.avatar_path = os.path.abspath(
             "/Users/xiaofanlu/Documents/github_repos/hackathon-umass/avatars/melina 2/melina-cute-256.png"
         )
+
+        # Import processor based on mode
+        if self.mode == 'simple':
+            from simple_classifier import shortcut_text, shortcut_screenshot
+            self.processor_text = shortcut_text
+            self.processor_screenshot = shortcut_screenshot
+            mode_name = "Simple Classifier"
+        else:  # agent mode
+            from manager_agent import shortcut_text, shortcut_screenshot
+            self.processor_text = shortcut_text
+            self.processor_screenshot = shortcut_screenshot
+            mode_name = "Manager Agent"
 
         # Queues for both shortcuts
         self.text_queue = queue.Queue()
@@ -41,16 +58,15 @@ class SimpleBackgroundHandler(rumps.App):
         self.timer = rumps.Timer(self.check_queues, 0.1)
         self.timer.start()
 
-        self.notify("Ready", "Cmd+Shift+E: Note | Cmd+Shift+4: Screenshot")
-        print("✅ Shortcuts ready:")
+        self.notify("Ready", f"{mode_name} | Cmd+Shift+E: Note | Cmd+Shift+4: Screenshot")
+        print(f"✅ Shortcuts ready ({mode_name} mode):")
         print("   Cmd+Shift+E: Quick text note (type 'C' for 40min timer)")
         print("   Cmd+Shift+4: Regional screenshot + comment")
 
     def start_hotkeys(self):
-        """Start both hotkey listeners with error suppression for volume keys"""
-
+        """Start hotkey listeners using HotKey class for better compatibility"""
+        
         def on_text_shortcut():
-            """Shortcut 1: Text input"""
             try:
                 print("\n🔤 TEXT SHORTCUT PRESSED!")
                 self.text_queue.put(True)
@@ -58,40 +74,43 @@ class SimpleBackgroundHandler(rumps.App):
                 print(f"⚠️  Text shortcut error: {e}")
 
         def on_screenshot_shortcut():
-            """Shortcut 2: Screenshot (Cmd+Shift+4)"""
             try:
                 print("\n📸 SCREENSHOT SHORTCUT PRESSED!")
                 screenshot = self.capture_screenshot()
-                if screenshot:  # Only queue if user didn't cancel
+                if screenshot:
                     self.screenshot_queue.put(screenshot)
                 else:
                     print("Screenshot cancelled by user")
             except Exception as e:
                 print(f"⚠️  Screenshot error: {e}")
 
-        # Create hotkey listener with custom error suppression
-        hotkey = keyboard.GlobalHotKeys({
-            '<cmd>+<shift>+e': on_text_shortcut,
-            '<cmd>+<shift>+4': on_screenshot_shortcut
-        })
+        # Create HotKey instances
+        text_hotkey = keyboard.HotKey(
+            keyboard.HotKey.parse('<cmd>+<shift>+e'),
+            on_text_shortcut
+        )
+        screenshot_hotkey = keyboard.HotKey(
+            keyboard.HotKey.parse('<cmd>+<shift>+2'),
+            on_screenshot_shortcut
+        )
 
-        # Monkey-patch the _on_press to suppress KeyError from volume keys
-        original_on_press = hotkey._on_press
+        def for_canonical(f):
+            return lambda k, injected=False: f(listener.canonical(k))
 
-        def safe_on_press(key):
-            """Wrapper that suppresses KeyError from unhandled keys"""
-            try:
-                return original_on_press(key)
-            except KeyError:
-                # Silently ignore keys not in our hotkey map (F11/F12/etc)
-                pass
-            except Exception as e:
-                print(f"⚠️  Key handler error: {e}")
+        def on_press(key, injected=False):
+            for_canonical(text_hotkey.press)(key, injected)
+            for_canonical(screenshot_hotkey.press)(key, injected)
 
-        hotkey._on_press = safe_on_press
+        def on_release(key, injected=False):
+            for_canonical(text_hotkey.release)(key, injected)
+            for_canonical(screenshot_hotkey.release)(key, injected)
 
-        # Start listener in background thread
-        threading.Thread(target=hotkey.start, daemon=True).start()
+        listener = keyboard.Listener(
+            on_press=on_press,
+            on_release=on_release
+        )
+        
+        threading.Thread(target=listener.start, daemon=True).start()
 
     def check_queues(self, _):
         """Check both queues on main thread"""
@@ -197,23 +216,23 @@ class SimpleBackgroundHandler(rumps.App):
     def _process_text_async(self, text):
         """Async text processing with timer shortcuts"""
         try:
-            # Check for timer shortcuts (C = 40min countdown)
-            if text.strip().upper() == 'C':
+            # Check for timer shortcuts (C = 40min countdown) - only in simple mode
+            if self.mode == 'simple' and text.strip().upper() == 'C':
                 print("⏱️  Starting 40-minute countdown...")
                 self.start_countdown_timer(40, "Focus Session")
                 self.notify("⏱️ 40-min countdown started", "Check menu bar")
                 return
 
-            # Check for S shortcut (25min Pomodoro)
-            if text.strip().upper() == 'S':
+            # Check for S shortcut (25min Pomodoro) - only in simple mode
+            if self.mode == 'simple' and text.strip().upper() == 'S':
                 print("⏱️  Starting 25-minute Pomodoro...")
                 self.start_countdown_timer(25, "Pomodoro")
                 self.notify("⏱️ 25-min countdown started", "Check menu bar")
                 return
 
-            # Normal text processing
+            # Normal text processing using selected processor
             self.notify("Processing...", text[:50])
-            result = shortcut_text(text)
+            result = self.processor_text(text)
             self.notify("✅ Saved", f"{result['target']}")
 
         except Exception as e:
@@ -234,7 +253,7 @@ class SimpleBackgroundHandler(rumps.App):
         """Async screenshot processing"""
         try:
             self.notify("Processing screenshot...", comment[:50] if comment else "")
-            result = shortcut_screenshot(screenshot_base64, comment or "")
+            result = self.processor_screenshot(screenshot_base64, comment or "")
             self.notify("✅ Saved", f"{result['target']}: {result['file']}")
 
         except Exception as e:
@@ -274,10 +293,39 @@ class SimpleBackgroundHandler(rumps.App):
 
 
 def main():
-    print("""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Background handler with keyboard shortcuts",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python background_handler_simple.py              # Use simple classifier (default)
+  python background_handler_simple.py --mode simple   # Use simple classifier
+  python background_handler_simple.py --mode agent    # Use manager agent system
+
+Shortcuts:
+  Cmd+Shift+E  → Quick text note (type 'C' for 40min timer, 'S' for 25min timer)
+  Cmd+Shift+4  → Regional screenshot + comment
+        """
+    )
+    parser.add_argument(
+        '--mode',
+        choices=['simple', 'agent'],
+        default='simple',
+        help='Processing mode: simple (fast classifier) or agent (full agent system)'
+    )
+
+    args = parser.parse_args()
+
+    mode_icon = "📝" if args.mode == 'simple' else "🤖"
+    mode_name = "Simple Classifier" if args.mode == 'simple' else "Manager Agent"
+
+    print(f"""
 ╔══════════════════════════════════════════════════════════╗
-║         📝 SIMPLE CLASSIFIER SHORTCUTS                   ║
+║         {mode_icon} {mode_name.upper():^44} ║
 ╚══════════════════════════════════════════════════════════╝
+
+Mode: {args.mode}
 
 Shortcuts:
 1. Cmd+Shift+E  → Quick text note
@@ -286,7 +334,7 @@ Shortcuts:
 
 Starting...
 """)
-    SimpleBackgroundHandler().run()
+    SimpleBackgroundHandler(mode=args.mode).run()
 
 
 if __name__ == "__main__":
