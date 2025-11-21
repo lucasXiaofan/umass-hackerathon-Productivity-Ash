@@ -3634,3 +3634,12 @@ This process is not trusted! Input event monitoring will not be possible until i
 This process is not trusted! Input event monitoring will not be possible until it is added to accessibility clients.
 /Users/xiaofanlu/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
   warnings.warn('resource_tracker: There appear to be %d '
+This process is not trusted! Input event monitoring will not be possible until it is added to accessibility clients.
+Fetching 9 files:   0%|          | 0/9 [00:00<?, ?it/s]Fetching 9 files: 100%|██████████| 9/9 [00:00<00:00, 119837.26it/s]
+/Users/xiaofanlu/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+Fetching 9 files:   0%|          | 0/9 [00:00<?, ?it/s]Fetching 9 files: 100%|██████████| 9/9 [00:00<00:00, 67529.04it/s]
+/Users/xiaofanlu/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+This process is not trusted! Input event monitoring will not be possible until it is added to accessibility clients.
+This process is not trusted! Input event monitoring will not be possible until it is added to accessibility clients.

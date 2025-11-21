@@ -20,7 +20,6 @@ from pynput import keyboard
 from pync import Notifier
 import rumps
 import argparse
-from Foundation import NSAppleScript
 
 # Suppress pynput keyboard errors (F11/F12 volume keys cause KeyError)
 # logging.getLogger('pynput').setLevel(logging.CRITICAL)

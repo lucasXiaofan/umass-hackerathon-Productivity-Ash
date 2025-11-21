@@ -47,7 +47,7 @@ context_providers:
 # Agent definitions
 agents:
   manager:
-    model: multi_smart_1
+    model: multi_smart_2
     role: "Conversation manager and task delegator"
 
     # Manager handles ALL context - workers get minimal focused info

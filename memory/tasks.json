@@ -35,7 +35,7 @@
     {
       "name": "Review paper: Chain of Diagnosis",
       "tag": "paper_review",
-      "due_date": "2025-11-20",
+      "due_date": "2025-11-22",
       "done": false,
       "notes": "",
       "created_at": "2025-11-16T00:00:00.000000"
@@ -43,7 +43,7 @@
     {
       "name": "Review paper: Learning on the Job: An Experience-Driven Self-Evolving Agent for Long-Horizon Tasks",
       "tag": "paper_review",
-      "due_date": "2025-11-20",
+      "due_date": "2025-11-22",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/MUSE.md",
       "comments": "This paper introduces MUSE, a self-evolving LLM agent framework with a hierarchical Memory Module, crucial for advancing memory use in LLM agents for long-horizon tasks in user&#x27;s research on LLM agent development.",
@@ -52,7 +52,7 @@
     {
       "name": "Review paper: A-Mem: Agentic Memory for LLM Agents",
       "tag": "paper_review",
-      "due_date": "2025-11-20",
+      "due_date": "2025-11-22",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/A-Mem.md",
       "comments": "This paper introduces a novel agentic memory system for LLM agents, crucial for research in LLM agent development. It offers a unique dynamic memory linking approach that could enhance agent autonomy and performance.",
@@ -61,7 +61,7 @@
     {
       "name": "Review paper: Triplet-Structured Knowledge Integration for Multi-Turn Medical Reasoning",
       "tag": "paper_review",
-      "due_date": "2025-11-19",
+      "due_date": "2025-11-23",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/Triplet_Structured_Knowledge_Integration_for_Multi_Turn_Medical_Reasoning.md",
       "comments": "Paper tracking file created",
@@ -70,7 +70,7 @@
     {
       "name": "Review paper: Doctor-R1: Mastering Clinical Inquiry with Experiential Agentic Reinforcement Learning",
       "tag": "paper_review",
-      "due_date": "2025-11-19",
+      "due_date": "2025-11-23",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/Doctor-R1.md",
       "comments": "Paper tracking file created",
@@ -79,7 +79,7 @@
     {
       "name": "Review paper: Baichuan-M2: Scaling Medical Capability with Large Verifier System",
       "tag": "paper_review",
-      "due_date": "2025-11-19",
+      "due_date": "2025-11-23",
       "done": false,
       "note_directory": "/Users/xiaohanlu/Documents/road/FLOW/areas/papers/Baichuan-M2_Scaling_Medical_Capability_with_Large_Verifier_System.md",
       "comments": "Paper tracking file created",
@@ -88,7 +88,7 @@
     {
       "name": "Review paper: HealthBench: Evaluating Large Language Models Towards Improved Human Health",
       "tag": "paper_review",
-      "due_date": "2025-11-19",
+      "due_date": "2025-11-23",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/HealthBench_2025.md",
       "comments": "Paper tracking file created",
@@ -97,7 +97,7 @@
     {
       "name": "Review paper: MEDDxAgent: A Unified Modular Agent Framework for Explainable Automatic Differential Diagnosis",
       "tag": "paper_review",
-      "due_date": "2025-11-19",
+      "due_date": "2025-11-23",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/MEDDxAgent.md",
       "comments": "Paper tracking file created",
@@ -106,7 +106,7 @@
     {
       "name": "Review paper: Towards Conversational Diagnostic AI",
       "tag": "paper_review",
-      "due_date": "2025-11-19",
+      "due_date": "2025-11-23",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/towards-conversational-diagnostic-ai.md",
       "comments": "Paper tracking file created",
@@ -115,7 +115,7 @@
     {
       "name": "Review paper: Medical Reasoning in LLMs: An In-Depth Analysis of DeepSeek R1",
       "tag": "paper_review",
-      "due_date": "2025-11-20",
+      "due_date": "2025-11-22",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/Medical_Reasoning_in_LLMs_DeepSeek_R1.md",
       "comments": "Paper tracking file created",
@@ -124,7 +124,7 @@
     {
       "name": "Review paper: MMedAgent: Learning to Use Medical Tools with Multi-modal Agent",
       "tag": "paper_review",
-      "due_date": "2025-11-20",
+      "due_date": "2025-11-22",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/MMedAgent.md",
       "comments": "Paper tracking file created",
@@ -133,11 +133,29 @@
     {
       "name": "Review paper: m1: Unleash the Potential of Test-Time Scaling for Medical Reasoning with Large Language Models",
       "tag": "paper_review",
-      "due_date": "2025-11-20",
+      "due_date": "2025-11-22",
       "done": false,
       "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/m1_unleash_the_potential_of_test_time_scaling_for_medical_reasoning_with_large_language_models.md",
       "comments": "Paper tracking file created",
       "created_at": "2025-11-18T22:30:45.831652"
+    },
+    {
+      "name": "Review paper: Multi-Agent Tool-Integrated Policy Optimization",
+      "tag": "paper_review",
+      "due_date": "2025-11-23",
+      "done": false,
+      "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/multi-agent-tool-integrated-policy-optimization.md",
+      "comments": "Paper tracking file created",
+      "created_at": "2025-11-19T15:22:02.595247"
+    },
+    {
+      "name": "Review paper: Breaking the Myth: Can Small Models Infer Postconditions Too?",
+      "tag": "paper_review",
+      "due_date": "2025-11-23",
+      "done": false,
+      "note_directory": "/Users/xiaofanlu/Documents/road/FLOW/areas/papers/breaking_the_myth_can_small_models_infer_postconditions_too.md",
+      "comments": "Paper tracking file created",
+      "created_at": "2025-11-21T18:37:33.275886"
     }
   ]
 }
